@@ -445,7 +445,7 @@ export function getDatesInRange(startDateStr: string, endDateStr: string): strin
   const end = new Date(Date.UTC(ey, em - 1, ed));
   while (current <= end) {
     dates.push(current.getUTCFullYear() + '-' + String(current.getUTCMonth() + 1).padStart(2, '0') + '-' + String(current.getUTCDate()).padStart(2, '0'));
-    if (dates.length > 366) throw new Error('A date range cannot exceed 366 days.');
+    if (dates.length > 366) return [];
     current.setUTCDate(current.getUTCDate() + 1);
   }
   return dates;
