@@ -213,7 +213,10 @@ function fallbackHeuristicParser(
     lowerSubject.includes('booking inquiry') ||
     lowerSubject.includes('tour inquiry') ||
     lowerSubject.includes('guide reservation') ||
-    lowerSubject.includes('reservation request');
+    lowerSubject.includes('reservation request') ||
+    lowerSubject.includes('new message from') ||
+    lowerSubject.includes('new traveler message') ||
+    lowerSubject.includes('tour request');
 
   const hasBodyInquirySignal = 
     lowerBody.includes('would like to book') ||
@@ -221,7 +224,12 @@ function fallbackHeuristicParser(
     lowerBody.includes('interested in a tour') ||
     lowerBody.includes('interested in booking') ||
     lowerBody.includes('inquiry from') ||
-    lowerBody.includes('new booking request');
+    lowerBody.includes('new booking request') ||
+    lowerBody.includes('new message from your guest') ||
+    lowerBody.includes('sent you a message') ||
+    lowerBody.includes('inquiry about your tour') ||
+    lowerBody.includes('guest wants to book') ||
+    lowerBody.includes('traveler is interested');
 
   // Reject pure marketing, spam, newsletters, password resets
   const isExcluded = 
@@ -230,9 +238,16 @@ function fallbackHeuristicParser(
     lowerSubject.includes('verification code') ||
     lowerSubject.includes('terms of service') ||
     lowerSubject.includes('marketing') ||
-    lowerSubject.includes('weekly digest');
+    lowerSubject.includes('weekly digest') ||
+    lowerSubject.includes('unsubscribe') ||
+    lowerSubject.includes('special offer') ||
+    lowerSubject.includes('limited-time offer') ||
+    lowerSubject.includes('discount') ||
+    lowerSubject.includes('monthly report') ||
+    lowerSubject.includes('newsletter');
 
-  const isBookingRequest = !isExcluded && (isFromKnownPlatform || hasStrongSubjectSignal || hasBodyInquirySignal);
+  // A platform sender alone is not enough: newsletters and generic platform notifications are common.
+  const isBookingRequest = !isExcluded && (hasStrongSubjectSignal || hasBodyInquirySignal);
 
   // Extract client name and email if available
   const emailMatch = fromHeader.match(/<([^>]+)>/);
