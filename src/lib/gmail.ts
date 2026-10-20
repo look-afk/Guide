@@ -1,5 +1,5 @@
 import { Order, BookingSource } from '../types';
-import { checkOrderExistsByMessageId } from './firebase';
+import { checkOrderExistsByMessageId, auth } from './firebase';
 
 export interface GmailFetchResult {
   newOrders: Order[];
@@ -110,6 +110,13 @@ function extractPlatformBookingLink(html: string, plainText: string, platform: B
   return undefined;
 }
 
+function isRealIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
 // Parse explicit calendar dates from subject or body (strictly avoids guessing or substituting today)
 function parseExactDateString(text: string): { dateStr?: string; isConfirmed: boolean } {
   if (!text) return { isConfirmed: false };
@@ -117,7 +124,8 @@ function parseExactDateString(text: string): { dateStr?: string; isConfirmed: bo
   // 1. YYYY-MM-DD format
   const isoMatch = text.match(/\b(202\d[-/](?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12]\d|3[01]))\b/);
   if (isoMatch) {
-    return { dateStr: isoMatch[1].replace(/\//g, '-'), isConfirmed: true };
+    const candidate = isoMatch[1].replace(/\//g, '-');
+    return isRealIsoDate(candidate) ? { dateStr: candidate, isConfirmed: true } : { isConfirmed: false };
   }
 
   // 2. Month DD, YYYY format
@@ -134,7 +142,8 @@ function parseExactDateString(text: string): { dateStr?: string; isConfirmed: bo
       const monthNum = String(mIdx + 1).padStart(2, '0');
       const dayNum = String(parseInt(mMatch[2], 10)).padStart(2, '0');
       const yearNum = mMatch[3];
-      return { dateStr: `${yearNum}-${monthNum}-${dayNum}`, isConfirmed: true };
+      const candidate = `${yearNum}-${monthNum}-${dayNum}`;
+      return isRealIsoDate(candidate) ? { dateStr: candidate, isConfirmed: true } : { isConfirmed: false };
     }
   }
 
@@ -346,9 +355,13 @@ export async function fetchBookingOrdersFromGmail(
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6000);
 
+        const idToken = await auth.currentUser?.getIdToken();
         const parseRes = await fetch('/api/parse-booking-email', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+          },
           body: JSON.stringify({
             emailSubject: subjectHeader,
             from: fromHeader,
@@ -381,7 +394,7 @@ export async function fetchBookingOrdersFromGmail(
         const gmailDirectUrl = `https://mail.google.com/mail/u/0/#inbox/${msg.id}`;
 
         const rawDate = parsedResult.requestedDate || '';
-        const isDateValid = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) && !isNaN(new Date(rawDate).getTime());
+        const isDateValid = isRealIsoDate(rawDate);
 
         const order: Order = {
           id: `order-${msg.id}`, // Stable deterministic ID based on Gmail Message ID
