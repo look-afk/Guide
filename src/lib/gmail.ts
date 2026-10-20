@@ -158,7 +158,8 @@ function parseExactDateString(text: string): { dateStr?: string; isConfirmed: bo
       const monthNum = String(mIdx + 1).padStart(2, '0');
       const dayNum = String(parseInt(dfMatch[1], 10)).padStart(2, '0');
       const yearNum = dfMatch[3];
-      return { dateStr: `${yearNum}-${monthNum}-${dayNum}`, isConfirmed: true };
+      const candidate = `${yearNum}-${monthNum}-${dayNum}`;
+      return isRealIsoDate(candidate) ? { dateStr: candidate, isConfirmed: true } : { isConfirmed: false };
     }
   }
 
@@ -206,7 +207,6 @@ function fallbackHeuristicParser(
   }
 
   // Multi-evidence check: Never treat an email as a booking inquiry solely because it contains the word "tour"!
-  const isFromKnownPlatform = platform !== 'Direct Email';
   const hasStrongSubjectSignal = 
     lowerSubject.includes('booking request') ||
     lowerSubject.includes('new inquiry') ||
