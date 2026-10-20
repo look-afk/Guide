@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isGuide(guideId) {
+      return isSignedIn() && request.auth.uid == guideId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Guide Profile
+    match /guides/{guideId} {
+      allow get: if isGuide(guideId);
+      allow create, update: if isGuide(guideId)
+        && request.resource.data.id is string
+        && request.resource.data.id == guideId
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 256;
+      allow delete: if false;
+
+      // Confirmed Tours
+      match /tours/{tourId} {
+        allow read: if isGuide(guideId);
+        allow create, update: if isGuide(guideId)
+          && isValidId(tourId)
+          && request.resource.data.guideId == guideId
+          && request.resource.data.destination is string
+          && request.resource.data.destination.size() <= 256;
+        allow delete: if isGuide(guideId);
+      }
+
+      // Booking Orders & Inquiries (TourHQ, etc.)
+      match /orders/{orderId} {
+        allow read: if isGuide(guideId);
+        allow create, update: if isGuide(guideId)
+          && isValidId(orderId)
+          && request.resource.data.guideId == guideId
+          && request.resource.data.platform is string;
+        allow delete: if isGuide(guideId);
+      }
+
+      // Busy dates subcollection
+      match /busyDates/{dateId} {
+        allow read: if isGuide(guideId);
+        allow create, update: if isGuide(guideId)
+          && isValidId(dateId)
+          && request.resource.data.guideId == guideId
+          && request.resource.data.isBusy is bool;
+        allow delete: if isGuide(guideId);
+      }
+    }
+  }
+}

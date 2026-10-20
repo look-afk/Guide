@@ -1,0 +1,6 @@
+{
+  "name": "SamduProgress — AI Problem Solving & Predictive Analytics",
+  "description": "Track daily problem solving progress, import problems via AI, log reflections, forecast goal completion with predictive analytics, and schedule study blocks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

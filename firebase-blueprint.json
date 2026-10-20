@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "guideProfile": {
+      "title": "GuideProfile",
+      "description": "Profile information for a registered tour guide",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 1024 },
+        "role": { "type": "string", "enum": ["guide"], "maxLength": 32 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "email", "role"]
+    },
+    "tour": {
+      "title": "Tour",
+      "description": "Confirmed tour scheduled on the guide calendar",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "guideId": { "type": "string", "maxLength": 128 },
+        "destination": { "type": "string", "maxLength": 256 },
+        "date": { "type": "string", "maxLength": 16 },
+        "time": { "type": "string", "maxLength": 64 },
+        "clientName": { "type": "string", "maxLength": 128 },
+        "clientEmail": { "type": "string", "maxLength": 256 },
+        "clientPhone": { "type": "string", "maxLength": 64 },
+        "groupSize": { "type": "number" },
+        "reason": { "type": "string", "maxLength": 256 },
+        "bookingSource": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["confirmed", "completed", "cancelled"], "maxLength": 32 },
+        "notes": { "type": "string", "maxLength": 1024 },
+        "orderId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "guideId", "destination", "date", "clientName", "bookingSource"]
+    },
+    "order": {
+      "title": "Order",
+      "description": "Incoming booking request from TourHQ, travel platforms, or emails",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "guideId": { "type": "string", "maxLength": 128 },
+        "emailMessageId": { "type": "string", "maxLength": 128 },
+        "platform": { "type": "string", "maxLength": 64 },
+        "clientName": { "type": "string", "maxLength": 128 },
+        "clientEmail": { "type": "string", "maxLength": 256 },
+        "clientPhone": { "type": "string", "maxLength": 64 },
+        "destination": { "type": "string", "maxLength": 256 },
+        "requestedDate": { "type": "string", "maxLength": 32 },
+        "groupSize": { "type": "number" },
+        "message": { "type": "string", "maxLength": 4096 },
+        "status": { "type": "string", "enum": ["new", "accepted", "rejected", "confirmed", "processed"], "maxLength": 32 },
+        "calendarTourId": { "type": "string", "maxLength": 64 },
+        "receivedAt": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "guideId", "platform", "clientName", "destination", "status"]
+    },
+    "busyDate": {
+      "title": "BusyDate",
+      "description": "Date marked as busy/unavailable for the guide",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 32 },
+        "guideId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 16 },
+        "isBusy": { "type": "boolean" },
+        "reason": { "type": "string", "maxLength": 256 },
+        "tourId": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "guideId", "date", "isBusy"]
+    }
+  },
+  "firestore": {
+    "/guides/{guideId}": {
+      "schema": "guideProfile",
+      "description": "Guide user profile document"
+    },
+    "/guides/{guideId}/tours/{tourId}": {
+      "schema": "tour",
+      "description": "Tours scheduled on guide calendar"
+    },
+    "/guides/{guideId}/orders/{orderId}": {
+      "schema": "order",
+      "description": "Booking requests and platform inquiries"
+    },
+    "/guides/{guideId}/busyDates/{dateId}": {
+      "schema": "busyDate",
+      "description": "Busy and unavailable date marks"
+    }
+  }
+}
