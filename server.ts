@@ -29,7 +29,7 @@ function isRealIsoDate(value: string): boolean {
 
 async function verifyFirebaseIdToken(req: Request): Promise<string | null> {
   const authorization = req.header('authorization') || '';
-  const match = authorization.match(/^Bearer\\s+(.+)$/i);
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
   if (!match || !firebaseConfig.apiKey) return null;
   try {
     const response = await fetch(
