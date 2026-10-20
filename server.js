@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type } from "@google/genai";
-import firebaseConfig from "./firebase-applet-config.json";
+import { readFileSync } from "node:fs";
 
 dotenv.config();
 
@@ -11,6 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = parseInt(process.env.PORT || "3000", 10);
+const firebaseConfig = JSON.parse(readFileSync(new URL("./firebase-applet-config.json", import.meta.url), "utf8"));
 
 app.use(express.json({ limit: "32kb" }));
 
