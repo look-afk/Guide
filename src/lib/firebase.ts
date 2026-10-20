@@ -167,7 +167,16 @@ export const subscribeToGuideTours = (
   );
 };
 
+export function isValidIsoDate(dateStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
 export const saveGuideTour = async (guideId: string, tour: Tour, previousDate?: string) => {
+  if (!isValidIsoDate(tour.date)) throw new Error('Tour date must be a real calendar date in YYYY-MM-DD format.');
+  if (previousDate && !isValidIsoDate(previousDate)) throw new Error('Previous tour date is invalid.');
   const tourRef = doc(db, 'guides', guideId, 'tours', tour.id);
   const newDateRef = doc(db, 'guides', guideId, 'busyDates', tour.date);
 
@@ -204,6 +213,7 @@ export const saveGuideTour = async (guideId: string, tour: Tour, previousDate?: 
       date: tour.date,
       isBusy: true,
       isManualBlock: Boolean(existingDateData?.isManualBlock), // Preserve manual block flag if it was also manually blocked
+      manualBlockReason: existingDateData?.manualBlockReason,
       reason: `${tour.destination} (${tour.clientName})`,
       tourId: tour.id,
       updatedAt: new Date().toISOString()
@@ -265,11 +275,11 @@ export const deleteGuideTour = async (guideId: string, tour: Tour) => {
       await deleteDoc(dateRef);
     }
 
-    // 3. If tour was linked to an order, update order status to 'accepted_externally' and clear calendarTourId
+    // Removing a local calendar entry is not proof that the external platform accepted or cancelled anything.
+    // Keep the inquiry status unchanged and only detach the local calendar link.
     if (tour.orderId) {
       const orderRef = doc(db, 'guides', guideId, 'orders', tour.orderId);
       await updateDoc(orderRef, {
-        status: 'accepted_externally',
         calendarTourId: null,
         updatedAt: new Date().toISOString()
       }).catch(() => {});
@@ -385,15 +395,17 @@ export const subscribeToGuideBusyDates = (
 
 // Block a single date manually
 export const blockGuideDate = async (guideId: string, dateStr: string, reason?: string) => {
+  if (!isValidIsoDate(dateStr)) throw new Error('Date must be a real calendar date in YYYY-MM-DD format.');
   const dateRef = doc(db, 'guides', guideId, 'busyDates', dateStr);
   try {
+    const existingSnap = await getDoc(dateRef);
+    const existing = existingSnap.data() as BusyDateRecord | undefined;
+    const manualReason = (reason || 'Manually Blocked Date').trim().slice(0, 500);
     const newRecord: BusyDateRecord = {
-      id: dateStr,
-      guideId,
-      date: dateStr,
-      isBusy: true,
-      isManualBlock: true,
-      reason: reason || 'Manually Blocked Date',
+      id: dateStr, guideId, date: dateStr, isBusy: true, isManualBlock: true,
+      manualBlockReason: manualReason,
+      reason: existing?.tourId ? existing.reason : manualReason,
+      tourId: existing?.tourId || undefined,
       updatedAt: new Date().toISOString(),
     };
     await setDoc(dateRef, newRecord, { merge: true });
@@ -404,6 +416,7 @@ export const blockGuideDate = async (guideId: string, dateStr: string, reason?: 
 
 // Unblock a manually blocked date
 export const unblockGuideDate = async (guideId: string, dateStr: string) => {
+  if (!isValidIsoDate(dateStr)) throw new Error('Date must be a real calendar date in YYYY-MM-DD format.');
   // Guard: if there are confirmed tours, never remove the busy state!
   const toursQuery = query(
     collection(db, 'guides', guideId, 'tours'),
@@ -424,21 +437,16 @@ export const unblockGuideDate = async (guideId: string, dateStr: string) => {
 
 // Helper to generate array of ISO dates between start and end (inclusive)
 export function getDatesInRange(startDateStr: string, endDateStr: string): string[] {
+  if (!isValidIsoDate(startDateStr) || !isValidIsoDate(endDateStr) || startDateStr > endDateStr) return [];
   const dates: string[] = [];
-  const start = new Date(startDateStr);
-  const end = new Date(endDateStr);
-
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
-    return [startDateStr];
-  }
-
-  const current = new Date(start);
+  const [sy, sm, sd] = startDateStr.split('-').map(Number);
+  const [ey, em, ed] = endDateStr.split('-').map(Number);
+  const current = new Date(Date.UTC(sy, sm - 1, sd));
+  const end = new Date(Date.UTC(ey, em - 1, ed));
   while (current <= end) {
-    const y = current.getFullYear();
-    const m = String(current.getMonth() + 1).padStart(2, '0');
-    const d = String(current.getDate()).padStart(2, '0');
-    dates.push(`${y}-${m}-${d}`);
-    current.setDate(current.getDate() + 1);
+    dates.push(current.getUTCFullYear() + '-' + String(current.getUTCMonth() + 1).padStart(2, '0') + '-' + String(current.getUTCDate()).padStart(2, '0'));
+    if (dates.length > 366) throw new Error('A date range cannot exceed 366 days.');
+    current.setUTCDate(current.getUTCDate() + 1);
   }
   return dates;
 }
@@ -451,19 +459,25 @@ export const blockGuideDateRange = async (
   reason: string
 ): Promise<number> => {
   const dates = getDatesInRange(startDate, endDate);
-  if (dates.length === 0) return 0;
+  if (dates.length === 0) throw new Error('Enter a valid date range using real YYYY-MM-DD dates.');
+  if (dates.length > 366) throw new Error('A date range cannot exceed 366 days.');
 
   try {
     const batch = writeBatch(db);
+    const reasonText = (reason || 'Manually Blocked Period').trim().slice(0, 500);
+    const existingRecords = await Promise.all(dates.map(async (d) => {
+      const snap = await getDoc(doc(db, 'guides', guideId, 'busyDates', d));
+      return [d, snap.data() as BusyDateRecord | undefined] as const;
+    }));
+    const existingByDate = new Map(existingRecords);
     for (const d of dates) {
       const dateRef = doc(db, 'guides', guideId, 'busyDates', d);
+      const existing = existingByDate.get(d);
       const record: BusyDateRecord = {
-        id: d,
-        guideId,
-        date: d,
-        isBusy: true,
-        isManualBlock: true,
-        reason: reason || 'Manually Blocked Period',
+        id: d, guideId, date: d, isBusy: true, isManualBlock: true,
+        manualBlockReason: reasonText,
+        reason: existing?.tourId ? existing.reason : reasonText,
+        tourId: existing?.tourId || undefined,
         updatedAt: new Date().toISOString()
       };
       batch.set(dateRef, record, { merge: true });
@@ -483,7 +497,8 @@ export const unblockGuideDateRange = async (
   endDate: string
 ): Promise<{ unblockedCount: number; protectedTourDates: string[] }> => {
   const dates = getDatesInRange(startDate, endDate);
-  if (dates.length === 0) return { unblockedCount: 0, protectedTourDates: [] };
+  if (dates.length === 0) throw new Error('Enter a valid date range using real YYYY-MM-DD dates.');
+  if (dates.length > 366) throw new Error('A date range cannot exceed 366 days.');
 
   try {
     // Find all tours in the user's collection to check protected dates
