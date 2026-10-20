@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { User } from 'firebase/auth';
 import { 
   initAuth, 
@@ -10,18 +10,23 @@ import {
   subscribeToGuideOrders,
   saveGuideOrder,
   updateOrderStatus,
+  deleteGuideOrder,
   subscribeToGuideBusyDates,
   toggleGuideDate,
   getAccessToken
 } from './lib/firebase';
-import { fetchBookingOrdersFromGmail, generateSamplePlatformOrders } from './lib/gmail';
+import { 
+  fetchBookingOrdersFromGmail, 
+  generateSandboxTestOrder, 
+  generateSamplePlatformOrders 
+} from './lib/gmail';
 import { Tour, Order, BusyDateMap } from './types';
 import { Header, ActiveTab } from './components/Header';
 import { CalendarTab } from './components/CalendarTab';
 import { OrdersTab } from './components/OrdersTab';
 import { TourModal } from './components/TourModal';
 import { OrderReviewModal } from './components/OrderReviewModal';
-import { Loader2, Calendar as CalendarIcon, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -37,6 +42,7 @@ export default function App() {
   // Syncing & Notifications
   const [isSyncingGmail, setIsSyncingGmail] = useState(false);
   const [syncReport, setSyncReport] = useState<string | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
   // Modals
@@ -47,11 +53,14 @@ export default function App() {
   const [isOrderReviewModalOpen, setIsOrderReviewModalOpen] = useState(false);
   const [selectedOrderForReview, setSelectedOrderForReview] = useState<Order | null>(null);
 
+  // Ref to prevent overlapping syncs
+  const isSyncingRef = useRef(false);
+
   // Show Toast
-  const showToast = (text: string, type: 'success' | 'info' | 'error' = 'success') => {
+  const showToast = useCallback((text: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 4500);
-  };
+  }, []);
 
   // Auth Listener
   useEffect(() => {
@@ -114,22 +123,41 @@ export default function App() {
     return set;
   }, [orders]);
 
-  // Handlers
-  const handleToggleDate = async (dateStr: string) => {
+  // Dates with confirmed tours map
+  const datesWithConfirmedTours = useMemo(() => {
+    const set = new Set<string>();
+    tours.forEach(t => {
+      if (t.date) set.add(t.date);
+    });
+    return set;
+  }, [tours]);
+
+  // Safe Date Toggle
+  const handleToggleDate = async (dateStr: string, hasTours: boolean) => {
     if (!user) return;
+
+    // Check if this date has confirmed tours scheduled
+    if (hasTours || datesWithConfirmedTours.has(dateStr)) {
+      showToast(
+        `Date ${dateStr} has confirmed tour(s) booked. To free this date, please cancel or edit the scheduled tour.`,
+        'info'
+      );
+      return;
+    }
+
     const current = busyDates[dateStr];
     try {
-      await toggleGuideDate(user.uid, dateStr, current);
+      await toggleGuideDate(user.uid, dateStr, current, false);
       showToast(current?.isBusy ? `Date ${dateStr} is now Available.` : `Date ${dateStr} marked as Busy.`);
     } catch (err: any) {
       showToast(err.message || 'Error updating date.', 'error');
     }
   };
 
-  const handleSaveTour = async (tour: Tour) => {
+  const handleSaveTour = async (tour: Tour, previousDate?: string) => {
     if (!user) return;
     try {
-      await saveGuideTour(user.uid, tour);
+      await saveGuideTour(user.uid, tour, previousDate);
       showToast(`Tour to "${tour.destination}" scheduled for ${tour.date}!`);
     } catch (err: any) {
       showToast(err.message || 'Failed to save tour.', 'error');
@@ -138,18 +166,49 @@ export default function App() {
 
   const handleDeleteTour = async (tour: Tour) => {
     if (!user) return;
-    if (!confirm(`Are you sure you want to cancel and remove the tour for ${tour.clientName}?`)) return;
     try {
       await deleteGuideTour(user.uid, tour);
-      showToast(`Tour on ${tour.date} removed.`);
+      showToast(`Tour on ${tour.date} cancelled and removed.`);
     } catch (err: any) {
       showToast(err.message || 'Failed to delete tour.', 'error');
+    }
+  };
+
+  const handleDeleteOrder = async (order: Order) => {
+    if (!user) return;
+    try {
+      await deleteGuideOrder(user.uid, order.id);
+      showToast(`Booking order from ${order.clientName} removed.`);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete order.', 'error');
+    }
+  };
+
+  const handleClearDemoOrders = async () => {
+    if (!user) return;
+    const demoOrders = orders.filter(o => o.isTestOrder);
+    if (demoOrders.length === 0) {
+      showToast('No test orders to clear.', 'info');
+      return;
+    }
+    try {
+      for (const order of demoOrders) {
+        await deleteGuideOrder(user.uid, order.id);
+      }
+      showToast(`Cleared ${demoOrders.length} sandbox demo booking inquiries.`);
+    } catch (err) {
+      showToast('Failed to clear some test orders.', 'error');
     }
   };
 
   // Confirm order to calendar
   const handleConfirmOrderToCalendar = async (order: Order, tourTime: string, reason: string) => {
     if (!user) return;
+
+    if (!order.requestedDate || !/^\d{4}-\d{2}-\d{2}$/.test(order.requestedDate)) {
+      showToast('Please provide a valid confirmed date (YYYY-MM-DD) before scheduling.', 'error');
+      return;
+    }
 
     const tourId = `tour-from-order-${Date.now()}`;
     const newTour: Tour = {
@@ -161,7 +220,7 @@ export default function App() {
       clientName: order.clientName,
       clientEmail: order.clientEmail,
       clientPhone: order.clientPhone,
-      groupSize: order.groupSize,
+      groupSize: order.groupSize || 2,
       reason: reason || `${order.platform} Guided Tour`,
       bookingSource: order.platform,
       status: 'confirmed',
@@ -178,33 +237,36 @@ export default function App() {
       // 2. Update Order status
       await updateOrderStatus(user.uid, order.id, 'confirmed', tourId);
 
-      showToast(`Order confirmed! Added tour to Calendar on ${order.requestedDate}.`);
-      setActiveTab('calendar');
+      showToast(`Order confirmed! Tour added to Calendar on ${order.requestedDate}.`);
     } catch (err: any) {
       showToast(err.message || 'Failed to add tour to calendar.', 'error');
     }
   };
 
-  // Sync with Gmail
-  const handleSyncGmail = async () => {
+  // Centralized Gmail Sync Function (used for both manual clicks and periodic background checks)
+  const executeGmailSync = useCallback(async (isManualTrigger: boolean = true) => {
     if (!user) return;
+    if (isSyncingRef.current) return;
 
     const token = accessToken || (await getAccessToken());
     if (!token) {
-      showToast('Please sign in with Google to allow Gmail scanning.', 'info');
-      try {
-        await signInGuide();
-      } catch (e) {
-        return;
+      if (isManualTrigger) {
+        showToast('Please sign in with Google to allow Gmail scanning.', 'info');
+        try {
+          await signInGuide();
+        } catch {
+          return;
+        }
       }
+      return;
     }
 
     const currentToken = accessToken || (await getAccessToken());
     if (!currentToken) return;
 
     try {
+      isSyncingRef.current = true;
       setIsSyncingGmail(true);
-      setSyncReport(null);
 
       const result = await fetchBookingOrdersFromGmail(currentToken, user.uid, existingMessageIds);
 
@@ -213,26 +275,59 @@ export default function App() {
         await saveGuideOrder(user.uid, order);
       }
 
-      const report = `Scanned ${result.scannedCount} emails · Found ${result.newOrders.length} new booking requests · ${result.duplicateCount} already synced · ${result.rejectedCount} non-booking emails filtered.`;
+      setLastSyncTime(new Date());
+
+      const report = `Scanned ${result.scannedCount} emails · Found ${result.newOrders.length} new booking inquiries · ${result.duplicateCount} already synced · ${result.rejectedCount} non-booking messages filtered.`;
       setSyncReport(report);
-      showToast(result.newOrders.length > 0 ? `Synced ${result.newOrders.length} new tour requests from Gmail!` : 'Gmail checked. No new booking inquiries found.', 'info');
+
+      if (isManualTrigger) {
+        showToast(
+          result.newOrders.length > 0
+            ? `Synced ${result.newOrders.length} new booking inquiries from Gmail!`
+            : 'Gmail checked. No new booking inquiries found.',
+          'info'
+        );
+      }
     } catch (err: any) {
       console.error('Gmail sync error:', err);
-      showToast(err.message || 'Failed to scan Gmail inbox.', 'error');
+      if (isManualTrigger) {
+        showToast(err.message || 'Failed to scan Gmail inbox.', 'error');
+      }
     } finally {
       setIsSyncingGmail(false);
+      isSyncingRef.current = false;
     }
-  };
+  }, [user, accessToken, existingMessageIds, showToast]);
 
-  // Load Sample Demo Orders (TourHQ, Viator, GetYourGuide)
-  const handleLoadDemoOrders = async () => {
+  // Automatic periodic email synchronization while the app is open (every 3 minutes)
+  useEffect(() => {
+    if (!user || !accessToken) return;
+
+    // Run first sync quietly after 5 seconds on load
+    const initialTimer = setTimeout(() => {
+      executeGmailSync(false);
+    }, 5000);
+
+    // Periodic sync interval: 3 minutes (180,000 ms)
+    const interval = setInterval(() => {
+      executeGmailSync(false);
+    }, 180000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, [user, accessToken, executeGmailSync]);
+
+  // Load Sample Sandbox Orders (TourHQ, Viator, GetYourGuide)
+  const handleLoadSandboxOrders = async () => {
     if (!user) return;
     try {
       const demoOrders = generateSamplePlatformOrders(user.uid);
       for (const order of demoOrders) {
         await saveGuideOrder(user.uid, order);
       }
-      showToast('Loaded 3 sample booking inquiries from TourHQ, Viator, and GetYourGuide!');
+      showToast('Loaded sample booking inquiries from TourHQ, Viator, and GetYourGuide!');
     } catch (err: any) {
       showToast('Failed to load sample bookings.', 'error');
     }
@@ -244,7 +339,7 @@ export default function App() {
       <div className="min-h-screen bg-[#0B0F17] text-slate-100 flex items-center justify-center">
         <div className="flex items-center gap-3 text-slate-400 text-sm">
           <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
-          <span>Loading Guide Tour Portal...</span>
+          <span>Loading Guide Portal...</span>
         </div>
       </div>
     );
@@ -263,7 +358,7 @@ export default function App() {
           <div className="space-y-2">
             <h1 className="text-2xl font-bold tracking-tight text-white">Guide Tour Management</h1>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Manage your availability calendar and automatically detect incoming tour booking requests from TourHQ, Viator, and Gmail.
+              Manage your personal tour availability calendar and automatically detect incoming booking requests from TourHQ, Viator, and incoming Gmail messages.
             </p>
           </div>
 
@@ -314,7 +409,7 @@ export default function App() {
         onSignOut={() => signOutGuide()}
         newOrdersCount={newOrdersCount}
         busyDaysCount={busyDaysCount}
-        onSyncGmail={handleSyncGmail}
+        onSyncGmail={() => executeGmailSync(true)}
         isSyncingGmail={isSyncingGmail}
         hasGmailAccess={Boolean(accessToken)}
       />
@@ -331,6 +426,8 @@ export default function App() {
           }`}>
             {toastMessage.type === 'error' ? (
               <AlertCircle className="w-4 h-4 text-red-400" />
+            ) : toastMessage.type === 'info' ? (
+              <Info className="w-4 h-4 text-cyan-400" />
             ) : (
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             )}
@@ -365,9 +462,11 @@ export default function App() {
         {activeTab === 'orders' && (
           <OrdersTab
             orders={orders}
-            onSyncGmail={handleSyncGmail}
+            onSyncGmail={() => executeGmailSync(true)}
             isSyncingGmail={isSyncingGmail}
             hasGmailAccess={Boolean(accessToken)}
+            userEmail={user.email}
+            lastSyncTime={lastSyncTime}
             onOpenConnectGmail={() => signInGuide()}
             onAcceptOrder={(order) => {
               updateOrderStatus(user.uid, order.id, 'accepted');
@@ -375,7 +474,7 @@ export default function App() {
             }}
             onRejectOrder={(order) => {
               updateOrderStatus(user.uid, order.id, 'rejected');
-              showToast(`Order from ${order.clientName} rejected.`);
+              showToast(`Order from ${order.clientName} declined.`);
             }}
             onMarkProcessed={(order) => {
               updateOrderStatus(user.uid, order.id, 'processed');
@@ -389,11 +488,13 @@ export default function App() {
               setSelectedOrderForReview(order);
               setIsOrderReviewModalOpen(true);
             }}
+            onDeleteOrder={handleDeleteOrder}
             onAddManualOrder={() => {
               setSelectedOrderForReview(null);
               setIsOrderReviewModalOpen(true);
             }}
-            onLoadDemoOrders={handleLoadDemoOrders}
+            onLoadSandboxDemo={handleLoadSandboxOrders}
+            onClearDemoOrders={handleClearDemoOrders}
             syncReport={syncReport}
           />
         )}
@@ -428,9 +529,14 @@ export default function App() {
         guideId={user.uid}
       />
 
-      {/* Footer */}
-      <footer className="py-4 text-center text-xs text-slate-600 border-t border-slate-800/80">
-        GuideOps · Professional Tour Calendar & Platform Order Management
+      {/* Footer with cloud configuration notice */}
+      <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-800/80 px-4">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>GuideOps · Professional Tour Calendar & Platform Booking Management</span>
+          <span className="text-[11px] text-slate-500">
+            Real-time Gmail sync active during app session · Firebase Firestore persistent
+          </span>
+        </div>
       </footer>
 
     </div>

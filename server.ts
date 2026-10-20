@@ -15,24 +15,34 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 app.use(express.json({ limit: '10mb' }));
 
 // Server-side Gemini initialization with telemetry header
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    },
-  },
-});
+const ai = process.env.GEMINI_API_KEY
+  ? new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    })
+  : null;
 
 // Health check endpoint
 app.get('/api/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'Guide Tour & Order Management' });
+  res.json({ 
+    status: 'ok', 
+    service: 'Guide Tour & Order Management',
+    aiParserEnabled: Boolean(ai)
+  });
 });
 
 // Intelligent email booking parser & classifier
 app.post('/api/parse-booking-email', async (req: Request, res: Response) => {
   try {
     const { emailSubject = '', from = '', bodyText = '', date = '' } = req.body;
+
+    if (!ai) {
+      return res.status(503).json({ error: 'AI parser not configured, use heuristic parser' });
+    }
 
     const prompt = `You are a Tour Booking Classifier for professional private tour guides.
 Analyze the following incoming email to identify whether it is a legitimate tour booking request or traveler inquiry from platforms such as TourHQ, Viator, GetYourGuide, Airbnb Experiences, TripAdvisor, or direct clients.
@@ -61,7 +71,7 @@ Classification instructions:
    - confidence: 'high' if clear booking parameters exist, 'medium' if partial, 'low' if vague.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',

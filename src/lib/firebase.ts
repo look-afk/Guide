@@ -14,6 +14,9 @@ import {
   setDoc, 
   updateDoc,
   deleteDoc, 
+  getDocs,
+  query,
+  where,
   onSnapshot,
   getDocFromServer
 } from 'firebase/firestore';
@@ -76,17 +79,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Test connection on boot
-export async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn('Firestore is connecting...');
-    }
-  }
-}
-testConnection();
+
 
 // Auth Listeners & Actions
 export const initAuth = (
@@ -163,7 +156,9 @@ export const subscribeToGuideTours = (
   return onSnapshot(
     toursRef,
     (snapshot) => {
-      const tours = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tour));
+      const tours = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Tour));
+      // Sort chronologically
+      tours.sort((a, b) => a.date.localeCompare(b.date));
       onUpdate(tours);
     },
     (error) => {
@@ -173,15 +168,28 @@ export const subscribeToGuideTours = (
   );
 };
 
-export const saveGuideTour = async (guideId: string, tour: Tour) => {
+export const saveGuideTour = async (guideId: string, tour: Tour, previousDate?: string) => {
   const tourRef = doc(db, 'guides', guideId, 'tours', tour.id);
-  const dateRef = doc(db, 'guides', guideId, 'busyDates', tour.date);
+  const newDateRef = doc(db, 'guides', guideId, 'busyDates', tour.date);
 
   try {
-    // 1. Save Tour
+    // 1. If date changed during edit, clean up old date if no other tours exist
+    if (previousDate && previousDate !== tour.date) {
+      const otherToursQuery = query(
+        collection(db, 'guides', guideId, 'tours'),
+        where('date', '==', previousDate)
+      );
+      const otherToursSnap = await getDocs(otherToursQuery);
+      const remainingTours = otherToursSnap.docs.filter(d => d.id !== tour.id);
+      if (remainingTours.length === 0) {
+        await deleteDoc(doc(db, 'guides', guideId, 'busyDates', previousDate));
+      }
+    }
+
+    // 2. Save Tour document
     await setDoc(tourRef, tour);
 
-    // 2. Automatically mark date as busy on the calendar
+    // 3. Mark the tour date as busy
     const busyRecord: BusyDateRecord = {
       id: tour.date,
       guideId,
@@ -191,7 +199,7 @@ export const saveGuideTour = async (guideId: string, tour: Tour) => {
       tourId: tour.id,
       updatedAt: new Date().toISOString()
     };
-    await setDoc(dateRef, busyRecord);
+    await setDoc(newDateRef, busyRecord);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `guides/${guideId}/tours/${tour.id}`);
   }
@@ -202,9 +210,43 @@ export const deleteGuideTour = async (guideId: string, tour: Tour) => {
   const dateRef = doc(db, 'guides', guideId, 'busyDates', tour.date);
 
   try {
+    // 1. Delete tour document
     await deleteDoc(tourRef);
-    // Remove busy mark if linked to this tour
-    await deleteDoc(dateRef);
+
+    // 2. Check if there are other confirmed tours on this same date
+    const sameDateToursQuery = query(
+      collection(db, 'guides', guideId, 'tours'),
+      where('date', '==', tour.date)
+    );
+    const sameDateSnap = await getDocs(sameDateToursQuery);
+    const remaining = sameDateSnap.docs.filter(d => d.id !== tour.id);
+
+    // Only make the date available if no other tours remain on this day
+    if (remaining.length === 0) {
+      await deleteDoc(dateRef);
+    } else {
+      // Update busy record with first remaining tour
+      const nextTour = remaining[0].data() as Tour;
+      await setDoc(dateRef, {
+        id: tour.date,
+        guideId,
+        date: tour.date,
+        isBusy: true,
+        reason: `${nextTour.destination} (${nextTour.clientName})`,
+        tourId: nextTour.id,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    // 3. If tour was linked to an order, revert order status to accepted
+    if (tour.orderId) {
+      const orderRef = doc(db, 'guides', guideId, 'orders', tour.orderId);
+      await updateDoc(orderRef, {
+        status: 'accepted',
+        calendarTourId: null,
+        updatedAt: new Date().toISOString()
+      }).catch(() => {});
+    }
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `guides/${guideId}/tours/${tour.id}`);
   }
@@ -221,8 +263,8 @@ export const subscribeToGuideOrders = (
   return onSnapshot(
     ordersRef,
     (snapshot) => {
-      const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-      // Sort newest first
+      const orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Order));
+      // Sort newest received first
       orders.sort((a, b) => new Date(b.receivedAt || b.createdAt).getTime() - new Date(a.receivedAt || a.createdAt).getTime());
       onUpdate(orders);
     },
@@ -263,6 +305,30 @@ export const updateOrderStatus = async (
   }
 };
 
+export const deleteGuideOrder = async (guideId: string, orderId: string) => {
+  const orderRef = doc(db, 'guides', guideId, 'orders', orderId);
+  try {
+    await deleteDoc(orderRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `guides/${guideId}/orders/${orderId}`);
+  }
+};
+
+// Check if an emailMessageId already exists in Firestore
+export const checkOrderExistsByMessageId = async (guideId: string, messageId: string): Promise<boolean> => {
+  try {
+    const q = query(
+      collection(db, 'guides', guideId, 'orders'),
+      where('emailMessageId', '==', messageId)
+    );
+    const snap = await getDocs(q);
+    return !snap.empty;
+  } catch (error) {
+    console.warn('Error checking existing message ID:', error);
+    return false;
+  }
+};
+
 // ----------------- BUSY DATES -----------------
 
 export const subscribeToGuideBusyDates = (
@@ -294,8 +360,24 @@ export const toggleGuideDate = async (
   guideId: string,
   dateStr: string,
   currentStatus?: BusyDateRecord,
+  hasConfirmedTours: boolean = false,
   reason?: string
 ) => {
+  // CRITICAL REQUIREMENT 1: Clicking a busy date must NOT accidentally remove a confirmed tour!
+  if (hasConfirmedTours) {
+    throw new Error('This date has confirmed tours scheduled. To free this date, please edit or cancel the scheduled tour.');
+  }
+
+  // Also query Firestore to guarantee we don't accidentally remove a tour
+  const toursQuery = query(
+    collection(db, 'guides', guideId, 'tours'),
+    where('date', '==', dateStr)
+  );
+  const toursSnap = await getDocs(toursQuery);
+  if (!toursSnap.empty) {
+    throw new Error('This date has confirmed tours scheduled. To free this date, please edit or cancel the scheduled tour.');
+  }
+
   const dateRef = doc(db, 'guides', guideId, 'busyDates', dateStr);
   const isCurrentlyBusy = Boolean(currentStatus?.isBusy);
 
@@ -308,7 +390,7 @@ export const toggleGuideDate = async (
         guideId,
         date: dateStr,
         isBusy: true,
-        reason: reason || 'Busy (No Tours Available)',
+        reason: reason || 'Manually Blocked Date',
         updatedAt: new Date().toISOString(),
       };
       await setDoc(dateRef, newRecord);

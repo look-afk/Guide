@@ -42,18 +42,22 @@ export interface Order {
   id: string;
   guideId: string;
   emailMessageId?: string;
+  emailSender?: string;      // Raw "From" header from Gmail
+  emailSubject?: string;     // Raw Subject line from Gmail
   platform: BookingSource | string;
   clientName: string;
   clientEmail?: string;
   clientPhone?: string;
   destination: string;
-  requestedDate: string; // YYYY-MM-DD or range
+  requestedDate: string;     // YYYY-MM-DD (or approximate text if uncertain)
+  isDateConfirmed: boolean;  // True if exact YYYY-MM-DD is verified
   groupSize: number;
   message: string;
   status: OrderStatus;
   calendarTourId?: string;
   receivedAt: string;
   confidence?: 'high' | 'medium' | 'low';
+  isTestOrder?: boolean;     // True only if generated as a sandbox test
   createdAt: string;
   updatedAt: string;
 }
@@ -64,7 +68,7 @@ export interface BusyDateRecord {
   date: string; // YYYY-MM-DD
   isBusy: boolean;
   reason?: string;
-  tourId?: string;
+  tourId?: string;           // Linked tour ID if busy due to a confirmed tour
   updatedAt: string;
 }
 

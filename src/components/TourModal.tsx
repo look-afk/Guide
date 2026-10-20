@@ -5,7 +5,7 @@ import { Calendar, Clock, MapPin, User as UserIcon, Tag, Globe, X, Check } from 
 interface TourModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSaveTour: (tour: Tour) => void;
+  onSaveTour: (tour: Tour, previousDate?: string) => void;
   initialTour?: Partial<Tour> | null;
   selectedDate?: string;
   guideId: string;
@@ -73,6 +73,8 @@ export const TourModal: React.FC<TourModalProps> = ({
     e.preventDefault();
     if (!destination.trim() || !clientName.trim() || !date) return;
 
+    const previousDate = initialTour?.date && initialTour.date !== date ? initialTour.date : undefined;
+
     const tour: Tour = {
       id: initialTour?.id || `tour-${Date.now()}`,
       guideId,
@@ -92,7 +94,7 @@ export const TourModal: React.FC<TourModalProps> = ({
       updatedAt: new Date().toISOString(),
     };
 
-    onSaveTour(tour);
+    onSaveTour(tour, previousDate);
     onClose();
   };
 
