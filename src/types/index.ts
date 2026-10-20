@@ -74,6 +74,7 @@ export interface BusyDateRecord {
   date: string; // YYYY-MM-DD
   isBusy: boolean;
   isManualBlock?: boolean; // True if manually blocked by the guide (e.g. day off / personal)
+  manualBlockReason?: string; // Kept separately so a manual block never overwrites tour details
   reason?: string;         // e.g. "Private tour — Samarkand — unavailable for other bookings"
   tourId?: string;         // Linked tour ID if busy due to a confirmed tour
   updatedAt: string;
