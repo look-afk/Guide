@@ -28,45 +28,99 @@ function decodeBase64Url(data: string): string {
   }
 }
 
-// Extract body text recursively from Gmail payload parts
-function extractBodyFromPayload(payload: any): string {
-  if (!payload) return '';
+// Extract body text and raw HTML recursively from Gmail payload parts
+function extractEmailContent(payload: any): { plainText: string; htmlText: string } {
+  if (!payload) return { plainText: '', htmlText: '' };
+
+  let plainText = '';
+  let htmlText = '';
 
   if (payload.body && payload.body.data) {
     const decoded = decodeBase64Url(payload.body.data);
-    return decoded.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (payload.mimeType === 'text/html') {
+      htmlText += decoded;
+      plainText += decoded.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    } else {
+      plainText += decoded;
+    }
   }
 
   if (payload.parts && Array.isArray(payload.parts)) {
-    let combined = '';
     for (const part of payload.parts) {
       if (part.mimeType === 'text/plain' && part.body?.data) {
-        combined += ' ' + decodeBase64Url(part.body.data);
+        plainText += ' ' + decodeBase64Url(part.body.data);
       } else if (part.mimeType === 'text/html' && part.body?.data) {
         const decoded = decodeBase64Url(part.body.data);
-        combined += ' ' + decoded.replace(/<[^>]+>/g, ' ');
+        htmlText += ' ' + decoded;
+        plainText += ' ' + decoded.replace(/<[^>]+>/g, ' ');
       } else if (part.parts) {
-        combined += ' ' + extractBodyFromPayload(part);
+        const nested = extractEmailContent(part);
+        plainText += ' ' + nested.plainText;
+        htmlText += ' ' + nested.htmlText;
       }
     }
-    return combined.replace(/\s+/g, ' ').trim();
   }
 
-  return '';
+  return {
+    plainText: plainText.replace(/\s+/g, ' ').trim(),
+    htmlText: htmlText.trim()
+  };
 }
 
-// Normalize date to YYYY-MM-DD if recognizable
-function parseDateString(text: string): { dateStr: string; isConfirmed: boolean } {
-  if (!text) return { dateStr: '', isConfirmed: false };
+// Extract genuine platform booking links from HTML or body
+function extractPlatformBookingLink(html: string, plainText: string, platform: BookingSource): string | undefined {
+  const combined = `${html} ${plainText}`;
+  const urlRegex = /https?:\/\/[^\s<>"'{}|\\^`]+[a-zA-Z0-9/]/g;
+  const urls = combined.match(urlRegex) || [];
 
-  // 1. Direct YYYY-MM-DD
-  const isoMatch = text.match(/\b(202\d[-/](?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12]\d|3[01]))\b/);
-  if (isoMatch) {
-    const standardized = isoMatch[1].replace(/\//g, '-');
-    return { dateStr: standardized, isConfirmed: true };
+  // 1. Look for platform specific inquiry / booking management links
+  for (const url of urls) {
+    const lower = url.toLowerCase();
+    if (platform === 'TourHQ' && (lower.includes('tourhq.com/guide/inquiry') || lower.includes('tourhq.com/booking') || lower.includes('tourhq.com/message'))) {
+      return url;
+    }
+    if (platform === 'Viator' && (lower.includes('viator.com/supplier') || lower.includes('viator.com/booking') || lower.includes('viator.com/manage'))) {
+      return url;
+    }
+    if (platform === 'GetYourGuide' && (lower.includes('getyourguide.com/supplier') || lower.includes('getyourguide.com/booking'))) {
+      return url;
+    }
+    if (platform === 'Airbnb' && (lower.includes('airbnb.com/hosting') || lower.includes('airbnb.com/reservation') || lower.includes('airbnb.com/messaging'))) {
+      return url;
+    }
   }
 
-  // 2. Month name DD, YYYY (e.g. October 24, 2026)
+  // 2. Fallback: look for general booking / inquiry links from the matching platform
+  for (const url of urls) {
+    const lower = url.toLowerCase();
+    if (platform === 'TourHQ' && lower.includes('tourhq.com') && !lower.includes('unsubscribe') && !lower.includes('privacy')) {
+      return url;
+    }
+    if (platform === 'Viator' && lower.includes('viator.com') && !lower.includes('unsubscribe')) {
+      return url;
+    }
+    if (platform === 'GetYourGuide' && lower.includes('getyourguide.com') && !lower.includes('unsubscribe')) {
+      return url;
+    }
+    if (platform === 'Airbnb' && lower.includes('airbnb.com') && !lower.includes('unsubscribe')) {
+      return url;
+    }
+  }
+
+  return undefined;
+}
+
+// Parse explicit calendar dates from subject or body (strictly avoids guessing or substituting today)
+function parseExactDateString(text: string): { dateStr?: string; isConfirmed: boolean } {
+  if (!text) return { isConfirmed: false };
+
+  // 1. YYYY-MM-DD format
+  const isoMatch = text.match(/\b(202\d[-/](?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12]\d|3[01]))\b/);
+  if (isoMatch) {
+    return { dateStr: isoMatch[1].replace(/\//g, '-'), isConfirmed: true };
+  }
+
+  // 2. Month DD, YYYY format
   const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
   const monthShorts = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
@@ -84,7 +138,7 @@ function parseDateString(text: string): { dateStr: string; isConfirmed: boolean 
     }
   }
 
-  // 3. DD Month YYYY (e.g. 24 October 2026)
+  // 3. DD Month YYYY format
   const dayFirstRegex = /\b([0-3]?\d)(?:st|nd|rd|th)?\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?,?\s+(202\d)\b/i;
   const dfMatch = text.match(dayFirstRegex);
   if (dfMatch) {
@@ -99,16 +153,17 @@ function parseDateString(text: string): { dateStr: string; isConfirmed: boolean 
     }
   }
 
-  // 4. Vague date mention (e.g., "next weekend", "next month", "spring")
-  const vagueMatch = text.match(/\b(next\s+\w+|sometime\s+in\s+\w+|around\s+\w+|flexible\s+dates|tentative)\b/i);
+  // 4. Approximate date phrase
+  const vagueMatch = text.match(/\b(next\s+\w+|sometime\s+in\s+\w+|around\s+\w+|flexible\s+dates|tentative|in\s+(?:january|february|march|april|may|june|july|august|september|october|november|december))\b/i);
   if (vagueMatch) {
     return { dateStr: vagueMatch[0], isConfirmed: false };
   }
 
-  return { dateStr: '', isConfirmed: false };
+  // If no date was found, leave undefined so user knows it's unconfirmed!
+  return { dateStr: undefined, isConfirmed: false };
 }
 
-// Heuristic fallback parser if AI endpoint is unavailable or slow
+// Multi-evidence heuristic parser
 function fallbackHeuristicParser(
   fromHeader: string,
   subjectHeader: string,
@@ -116,13 +171,13 @@ function fallbackHeuristicParser(
 ): {
   isBookingRequest: boolean;
   platform: BookingSource;
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string;
-  destination: string;
-  requestedDate: string;
+  clientName?: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  destination?: string;
+  requestedDate?: string;
   isDateConfirmed: boolean;
-  groupSize: number;
+  groupSize?: number;
   message: string;
 } {
   const lowerFrom = fromHeader.toLowerCase();
@@ -141,49 +196,71 @@ function fallbackHeuristicParser(
     platform = 'Airbnb';
   }
 
-  // Extract email address and client name
+  // Multi-evidence check: Never treat an email as a booking inquiry solely because it contains the word "tour"!
+  const isFromKnownPlatform = platform !== 'Direct Email';
+  const hasStrongSubjectSignal = 
+    lowerSubject.includes('booking request') ||
+    lowerSubject.includes('new inquiry') ||
+    lowerSubject.includes('booking inquiry') ||
+    lowerSubject.includes('tour inquiry') ||
+    lowerSubject.includes('guide reservation') ||
+    lowerSubject.includes('reservation request');
+
+  const hasBodyInquirySignal = 
+    lowerBody.includes('would like to book') ||
+    lowerBody.includes('are you available') ||
+    lowerBody.includes('interested in a tour') ||
+    lowerBody.includes('interested in booking') ||
+    lowerBody.includes('inquiry from') ||
+    lowerBody.includes('new booking request');
+
+  // Reject pure marketing, spam, newsletters, password resets
+  const isExcluded = 
+    lowerSubject.includes('newsletter') ||
+    lowerSubject.includes('reset password') ||
+    lowerSubject.includes('verification code') ||
+    lowerSubject.includes('terms of service') ||
+    lowerSubject.includes('marketing') ||
+    lowerSubject.includes('weekly digest');
+
+  const isBookingRequest = !isExcluded && (isFromKnownPlatform || hasStrongSubjectSignal || hasBodyInquirySignal);
+
+  // Extract client name and email if available
   const emailMatch = fromHeader.match(/<([^>]+)>/);
-  const clientEmail = emailMatch ? emailMatch[1] : fromHeader.trim();
-  let clientName = fromHeader.split('<')[0].replace(/["']/g, '').trim();
-  if (!clientName || clientName.toLowerCase().includes('notifications') || clientName.toLowerCase().includes('booking')) {
-    // Try to extract client name from body or subject
-    const nameFromSubject = subjectHeader.match(/from\s+([A-Za-z\s]+?)(?:\s+for|\s+-|$)/i);
-    clientName = nameFromSubject ? nameFromSubject[1].trim() : 'Traveler';
+  const clientEmail = emailMatch ? emailMatch[1] : (fromHeader.includes('@') ? fromHeader.trim() : undefined);
+  
+  let clientName: string | undefined = undefined;
+  const rawSenderName = fromHeader.split('<')[0].replace(/["']/g, '').trim();
+  if (rawSenderName && !rawSenderName.toLowerCase().includes('notification') && !rawSenderName.toLowerCase().includes('booking') && !rawSenderName.toLowerCase().includes('support')) {
+    clientName = rawSenderName;
+  } else {
+    // Try to find "from <Name>" in subject
+    const nameMatch = subjectHeader.match(/from\s+([A-Za-z\s]+?)(?:\s+for|\s+-|$)/i);
+    if (nameMatch) {
+      clientName = nameMatch[1].trim();
+    }
   }
 
-  // Check if it's a tour booking inquiry
-  const hasBookingKeywords = 
-    lowerSubject.includes('tour') || 
-    lowerSubject.includes('booking') || 
-    lowerSubject.includes('inquiry') ||
-    lowerSubject.includes('guide') ||
-    lowerSubject.includes('trip') ||
-    lowerSubject.includes('itinerary') ||
-    lowerSubject.includes('reservation') ||
-    lowerBody.includes('tour') ||
-    lowerBody.includes('guide') ||
-    lowerBody.includes('availability') ||
-    lowerBody.includes('itinerary') ||
-    platform !== 'Direct Email';
+  // Destination from subject or body
+  let destination: string | undefined = subjectHeader.replace(/^(re:|fwd:|tourhq:|viator:)\s*/gi, '').trim();
+  if (destination.length > 90) destination = destination.slice(0, 90);
+  if (!destination || destination.toLowerCase().includes('new inquiry') || destination.toLowerCase().includes('booking request')) {
+    destination = undefined; // Don't invent destination
+  }
 
   // Date parsing
-  const parsedDate = parseDateString(`${subjectHeader} ${bodyText}`);
-
-  // Destination from subject or body
-  let destination = subjectHeader.replace(/^(re:|fwd:|tourhq:|viator:)\s*/gi, '').trim();
-  if (destination.length > 80) destination = destination.slice(0, 80);
-  if (!destination) destination = 'Private Guided Tour';
+  const parsedDate = parseExactDateString(`${subjectHeader} ${bodyText}`);
 
   // Group size regex
   const groupMatch = bodyText.match(/(\d+)\s*(?:people|adults|guests|persons|travelers|pax)/i);
-  const groupSize = groupMatch ? parseInt(groupMatch[1], 10) : 2;
+  const groupSize = groupMatch ? parseInt(groupMatch[1], 10) : undefined;
 
   // Phone regex
   const phoneMatch = bodyText.match(/(\+?\d[\d\s\-()]{7,}\d)/);
-  const clientPhone = phoneMatch ? phoneMatch[1].trim() : '';
+  const clientPhone = phoneMatch ? phoneMatch[1].trim() : undefined;
 
   return {
-    isBookingRequest: hasBookingKeywords,
+    isBookingRequest,
     platform,
     clientName,
     clientEmail,
@@ -191,8 +268,8 @@ function fallbackHeuristicParser(
     destination,
     requestedDate: parsedDate.dateStr,
     isDateConfirmed: parsedDate.isConfirmed,
-    groupSize: isNaN(groupSize) || groupSize < 1 ? 2 : groupSize,
-    message: bodyText.slice(0, 1000) || subjectHeader,
+    groupSize,
+    message: bodyText.slice(0, 1500) || subjectHeader,
   };
 }
 
@@ -201,11 +278,11 @@ export async function fetchBookingOrdersFromGmail(
   guideId: string,
   existingMessageIds: Set<string>
 ): Promise<GmailFetchResult> {
-  // Broad search query for booking inquiries and travel platforms
+  // Targeted search query for booking inquiries and travel platforms
   const query = encodeURIComponent(
-    'TourHQ OR Viator OR GetYourGuide OR Airbnb OR TripAdvisor OR "tour" OR "guide" OR "booking" OR "reservation" OR "trip" OR "itinerary" OR "inquiry"'
+    'from:(tourhq.com OR viator.com OR getyourguide.com OR airbnb.com OR tripadvisor.com) OR "TourHQ" OR "Viator" OR "GetYourGuide" OR "booking inquiry" OR "tour booking" OR "guide reservation" OR "new booking request"'
   );
-  const listUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${query}&maxResults=25`;
+  const listUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${query}&maxResults=30`;
 
   const listResponse = await fetch(listUrl, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -214,7 +291,7 @@ export async function fetchBookingOrdersFromGmail(
   if (!listResponse.ok) {
     const errorJson = await listResponse.json().catch(() => ({}));
     throw new Error(
-      errorJson.error?.message || `Gmail API returned ${listResponse.status}. Please check permissions.`
+      errorJson.error?.message || `Gmail API error (${listResponse.status}). Please check authorization.`
     );
   }
 
@@ -227,13 +304,13 @@ export async function fetchBookingOrdersFromGmail(
   let errorCount = 0;
 
   for (const msg of messages) {
-    // 1. Check in-memory set to avoid duplicate fetching
+    // 1. Check in-memory set to prevent duplicate extraction
     if (existingMessageIds.has(msg.id)) {
       duplicateCount++;
       continue;
     }
 
-    // 2. Also check Firestore to be 100% resilient across sessions
+    // 2. Check Firestore persistent storage to ensure deduplication
     const alreadyInDb = await checkOrderExistsByMessageId(guideId, msg.id);
     if (alreadyInDb) {
       existingMessageIds.add(msg.id);
@@ -260,11 +337,11 @@ export async function fetchBookingOrdersFromGmail(
       const fromHeader = headers.find((h: any) => h.name?.toLowerCase() === 'from')?.value || 'Unknown Sender';
       const dateHeader = headers.find((h: any) => h.name?.toLowerCase() === 'date')?.value || new Date().toISOString();
 
-      const bodyText = extractBodyFromPayload(msgData.payload);
+      const { plainText, htmlText } = extractEmailContent(msgData.payload);
 
       let parsedResult: any = null;
 
-      // 4. Try AI-powered booking parsing with quick timeout
+      // 4. Try AI-powered booking parsing with timeout
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6000);
@@ -275,7 +352,7 @@ export async function fetchBookingOrdersFromGmail(
           body: JSON.stringify({
             emailSubject: subjectHeader,
             from: fromHeader,
-            bodyText: bodyText.slice(0, 4500),
+            bodyText: plainText.slice(0, 4500),
             date: dateHeader,
           }),
           signal: controller.signal,
@@ -285,42 +362,46 @@ export async function fetchBookingOrdersFromGmail(
         if (parseRes.ok) {
           parsedResult = await parseRes.json();
         }
-      } catch (aiErr) {
-        // AI endpoint timed out or failed; will gracefully fall back
+      } catch {
+        // Fall back gracefully to multi-evidence heuristic parser
       }
 
-      // 5. If AI parser wasn't available or errored, use reliable heuristic parser
       if (!parsedResult) {
-        const fallback = fallbackHeuristicParser(fromHeader, subjectHeader, bodyText);
+        const fallback = fallbackHeuristicParser(fromHeader, subjectHeader, plainText);
         parsedResult = {
           ...fallback,
           confidence: 'medium',
         };
       }
 
-      // 6. Check if it's an actual tour booking inquiry
+      // 5. Only save if it is a genuine booking inquiry
       if (parsedResult.isBookingRequest) {
+        const detectedPlatform: BookingSource = parsedResult.platform || 'Direct Email';
+        const externalBookingLink = extractPlatformBookingLink(htmlText, plainText, detectedPlatform);
+        const gmailDirectUrl = `https://mail.google.com/mail/u/0/#inbox/${msg.id}`;
+
         const rawDate = parsedResult.requestedDate || '';
         const isDateValid = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) && !isNaN(new Date(rawDate).getTime());
 
         const order: Order = {
-          id: `order-gmail-${msg.id}`,
+          id: `order-${msg.id}`, // Stable deterministic ID based on Gmail Message ID
           guideId,
           emailMessageId: msg.id,
           emailSender: fromHeader,
           emailSubject: subjectHeader,
-          platform: parsedResult.platform || 'Direct Email',
-          clientName: parsedResult.clientName || fromHeader.split('<')[0].replace(/["']/g, '').trim() || 'Traveler',
+          platform: detectedPlatform,
+          clientName: parsedResult.clientName || undefined,
           clientEmail: parsedResult.clientEmail || (fromHeader.match(/<([^>]+)>/)?.[1] || undefined),
           clientPhone: parsedResult.clientPhone || undefined,
-          destination: parsedResult.destination || subjectHeader || 'Custom Guided Tour',
-          requestedDate: rawDate,
+          destination: parsedResult.destination || undefined,
+          requestedDate: rawDate || undefined,
           isDateConfirmed: isDateValid,
-          groupSize: parsedResult.groupSize || 2,
-          message: parsedResult.message || bodyText.slice(0, 1200) || subjectHeader,
+          groupSize: parsedResult.groupSize || undefined,
+          message: parsedResult.message || plainText.slice(0, 1200) || subjectHeader,
           status: 'new',
           confidence: (parsedResult.confidence as any) || 'medium',
-          isTestOrder: false, // 100% genuine Gmail message
+          gmailMessageUrl: gmailDirectUrl,
+          externalBookingUrl: externalBookingLink,
           receivedAt: new Date(dateHeader).toISOString(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -344,113 +425,4 @@ export async function fetchBookingOrdersFromGmail(
     rejectedCount,
     errorCount,
   };
-}
-
-// Generate explicit sandbox test inquiry (clearly marked with isTestOrder: true)
-export function generateSandboxTestOrder(guideId: string): Order {
-  const inThreeDays = new Date();
-  inThreeDays.setDate(inThreeDays.getDate() + 3);
-  const testDate = inThreeDays.toISOString().split('T')[0];
-
-  return {
-    id: `order-sandbox-${Date.now()}`,
-    guideId,
-    emailMessageId: `sandbox-msg-${Date.now()}`,
-    emailSender: 'TourHQ Notifications <bookings@tourhq.com>',
-    emailSubject: 'New Booking Inquiry: Samarkand Historic Silk Road Tour',
-    platform: 'TourHQ',
-    clientName: 'Sarah Jenkins (Sandbox Test)',
-    clientEmail: 'sarah.j.sandbox@traveltest.com',
-    clientPhone: '+1 (415) 555-0199',
-    destination: 'Samarkand Registan & Shah-i-Zinda Heritage Walk',
-    requestedDate: testDate,
-    isDateConfirmed: true,
-    groupSize: 2,
-    message: 'Hello! We are looking for a certified English-speaking guide for a private half-day historical walking tour in Samarkand. We would like to visit the Registan complex and Gur-e-Amir.',
-    status: 'new',
-    confidence: 'high',
-    isTestOrder: true, // Prominently tagged as sandbox simulation
-    receivedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-// Generate sandbox sample orders for multi-platform preview
-export function generateSamplePlatformOrders(guideId: string): Order[] {
-  const d1 = new Date();
-  d1.setDate(d1.getDate() + 2);
-  const date1 = d1.toISOString().split('T')[0];
-
-  const d2 = new Date();
-  d2.setDate(d2.getDate() + 5);
-  const date2 = d2.toISOString().split('T')[0];
-
-  return [
-    {
-      id: `order-sandbox-tourhq-${Date.now()}`,
-      guideId,
-      emailMessageId: `sandbox-tourhq-${Date.now()}`,
-      emailSender: 'TourHQ Travelers <inquiries@tourhq.com>',
-      emailSubject: 'Booking Inquiry: Samarkand & Shakhrisabz Day Excursion',
-      platform: 'TourHQ',
-      clientName: 'David & Emma Clark',
-      clientEmail: 'clark.travels@sandbox.com',
-      clientPhone: '+44 7700 900123',
-      destination: 'Samarkand Registan & Shakhrisabz Excursion',
-      requestedDate: date1,
-      isDateConfirmed: true,
-      groupSize: 2,
-      message: 'Greetings! We would love to book a guided historical day trip exploring the architectural landmarks of Samarkand and Amir Timur birthplace in Shakhrisabz. Need pickup from hotel.',
-      status: 'new',
-      confidence: 'high',
-      isTestOrder: true,
-      receivedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: `order-sandbox-viator-${Date.now() + 1}`,
-      guideId,
-      emailMessageId: `sandbox-viator-${Date.now() + 1}`,
-      emailSender: 'Viator Booking Partner <lead-notification@viator.com>',
-      emailSubject: 'Viator Request: Silk Road Artisan & Culinary Walk',
-      platform: 'Viator',
-      clientName: 'Kenji Takahashi',
-      clientEmail: 'kenji.t@sandbox.jp',
-      clientPhone: '+81 90 1234 5678',
-      destination: 'Samarkand Artisan Workshop & Traditional Plov Tasting',
-      requestedDate: date2,
-      isDateConfirmed: true,
-      groupSize: 4,
-      message: 'Hello, we are a family of four visiting Uzbekistan. We are interested in private guiding covering paper making workshops at Konigil and old town markets.',
-      status: 'new',
-      confidence: 'high',
-      isTestOrder: true,
-      receivedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: `order-sandbox-gyg-${Date.now() + 2}`,
-      guideId,
-      emailMessageId: `sandbox-gyg-${Date.now() + 2}`,
-      emailSender: 'GetYourGuide Supplier Service <support@getyourguide.com>',
-      emailSubject: 'Inquiry: Private Samarkand Night Tour',
-      platform: 'GetYourGuide',
-      clientName: 'Amelie Laurent',
-      clientEmail: 'amelie.laurent@sandbox.fr',
-      destination: 'Samarkand Illuminated Monument Evening Tour',
-      requestedDate: 'Next Friday evening',
-      isDateConfirmed: false, // Uncertain date demo
-      groupSize: 3,
-      message: 'Bonjour! Is the night tour available next Friday evening? We are flexible by one day if your schedule is busy.',
-      status: 'new',
-      confidence: 'medium',
-      isTestOrder: true,
-      receivedAt: new Date(Date.now() - 3600000 * 6).toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-  ];
 }

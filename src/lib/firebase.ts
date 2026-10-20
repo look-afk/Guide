@@ -14,11 +14,12 @@ import {
   setDoc, 
   updateDoc,
   deleteDoc, 
+  getDoc,
   getDocs,
   query,
   where,
   onSnapshot,
-  getDocFromServer
+  writeBatch
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { Tour, Order, BusyDateRecord, BusyDateMap, GuideProfile, OrderStatus } from '../types';
@@ -78,8 +79,6 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
 }
-
-
 
 // Auth Listeners & Actions
 export const initAuth = (
@@ -173,7 +172,7 @@ export const saveGuideTour = async (guideId: string, tour: Tour, previousDate?: 
   const newDateRef = doc(db, 'guides', guideId, 'busyDates', tour.date);
 
   try {
-    // 1. If date changed during edit, clean up old date if no other tours exist
+    // 1. If date changed during edit, clean up old date if no other tours exist AND no manual block exists
     if (previousDate && previousDate !== tour.date) {
       const otherToursQuery = query(
         collection(db, 'guides', guideId, 'tours'),
@@ -181,25 +180,35 @@ export const saveGuideTour = async (guideId: string, tour: Tour, previousDate?: 
       );
       const otherToursSnap = await getDocs(otherToursQuery);
       const remainingTours = otherToursSnap.docs.filter(d => d.id !== tour.id);
+
       if (remainingTours.length === 0) {
-        await deleteDoc(doc(db, 'guides', guideId, 'busyDates', previousDate));
+        // Check if there was a manual block on previousDate
+        const oldDateDoc = await getDoc(doc(db, 'guides', guideId, 'busyDates', previousDate));
+        const oldDateData = oldDateDoc.data() as BusyDateRecord | undefined;
+        if (!oldDateData?.isManualBlock) {
+          await deleteDoc(doc(db, 'guides', guideId, 'busyDates', previousDate));
+        }
       }
     }
 
     // 2. Save Tour document
     await setDoc(tourRef, tour);
 
-    // 3. Mark the tour date as busy
+    // 3. Mark the tour date as busy in busyDates
+    const existingDateDoc = await getDoc(newDateRef);
+    const existingDateData = existingDateDoc.data() as BusyDateRecord | undefined;
+
     const busyRecord: BusyDateRecord = {
       id: tour.date,
       guideId,
       date: tour.date,
       isBusy: true,
+      isManualBlock: Boolean(existingDateData?.isManualBlock), // Preserve manual block flag if it was also manually blocked
       reason: `${tour.destination} (${tour.clientName})`,
       tourId: tour.id,
       updatedAt: new Date().toISOString()
     };
-    await setDoc(newDateRef, busyRecord);
+    await setDoc(newDateRef, busyRecord, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `guides/${guideId}/tours/${tour.id}`);
   }
@@ -221,11 +230,12 @@ export const deleteGuideTour = async (guideId: string, tour: Tour) => {
     const sameDateSnap = await getDocs(sameDateToursQuery);
     const remaining = sameDateSnap.docs.filter(d => d.id !== tour.id);
 
-    // Only make the date available if no other tours remain on this day
-    if (remaining.length === 0) {
-      await deleteDoc(dateRef);
-    } else {
-      // Update busy record with first remaining tour
+    // Check if the date had a manual block
+    const dateDocSnap = await getDoc(dateRef);
+    const dateData = dateDocSnap.data() as BusyDateRecord | undefined;
+
+    if (remaining.length > 0) {
+      // Still has other tours on this day: update busy record with first remaining tour
       const nextTour = remaining[0].data() as Tour;
       await setDoc(dateRef, {
         id: tour.date,
@@ -234,15 +244,32 @@ export const deleteGuideTour = async (guideId: string, tour: Tour) => {
         isBusy: true,
         reason: `${nextTour.destination} (${nextTour.clientName})`,
         tourId: nextTour.id,
+        isManualBlock: Boolean(dateData?.isManualBlock),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } else if (dateData?.isManualBlock) {
+      // No remaining tours, BUT date was manually blocked by the guide:
+      // PRESERVE the manual block! Do not delete the busy date record!
+      await setDoc(dateRef, {
+        id: tour.date,
+        guideId,
+        date: tour.date,
+        isBusy: true,
+        isManualBlock: true,
+        reason: dateData.reason || 'Manually Blocked Date',
+        tourId: null,
         updatedAt: new Date().toISOString()
       });
+    } else {
+      // No other tours and no manual block: make the date available
+      await deleteDoc(dateRef);
     }
 
-    // 3. If tour was linked to an order, revert order status to accepted
+    // 3. If tour was linked to an order, update order status to 'accepted_externally' and clear calendarTourId
     if (tour.orderId) {
       const orderRef = doc(db, 'guides', guideId, 'orders', tour.orderId);
       await updateDoc(orderRef, {
-        status: 'accepted',
+        status: 'accepted_externally',
         calendarTourId: null,
         updatedAt: new Date().toISOString()
       }).catch(() => {});
@@ -278,7 +305,7 @@ export const subscribeToGuideOrders = (
 export const saveGuideOrder = async (guideId: string, order: Order) => {
   const orderRef = doc(db, 'guides', guideId, 'orders', order.id);
   try {
-    await setDoc(orderRef, order);
+    await setDoc(orderRef, order, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `guides/${guideId}/orders/${order.id}`);
   }
@@ -296,7 +323,7 @@ export const updateOrderStatus = async (
       status,
       updatedAt: new Date().toISOString()
     };
-    if (calendarTourId) {
+    if (calendarTourId !== undefined) {
       updateData.calendarTourId = calendarTourId;
     }
     await updateDoc(orderRef, updateData);
@@ -329,7 +356,7 @@ export const checkOrderExistsByMessageId = async (guideId: string, messageId: st
   }
 };
 
-// ----------------- BUSY DATES -----------------
+// ----------------- BUSY & BLOCKED DATES -----------------
 
 export const subscribeToGuideBusyDates = (
   guideId: string,
@@ -356,50 +383,139 @@ export const subscribeToGuideBusyDates = (
   );
 };
 
-export const toggleGuideDate = async (
-  guideId: string,
-  dateStr: string,
-  currentStatus?: BusyDateRecord,
-  hasConfirmedTours: boolean = false,
-  reason?: string
-) => {
-  // CRITICAL REQUIREMENT 1: Clicking a busy date must NOT accidentally remove a confirmed tour!
-  if (hasConfirmedTours) {
-    throw new Error('This date has confirmed tours scheduled. To free this date, please edit or cancel the scheduled tour.');
+// Block a single date manually
+export const blockGuideDate = async (guideId: string, dateStr: string, reason?: string) => {
+  const dateRef = doc(db, 'guides', guideId, 'busyDates', dateStr);
+  try {
+    const newRecord: BusyDateRecord = {
+      id: dateStr,
+      guideId,
+      date: dateStr,
+      isBusy: true,
+      isManualBlock: true,
+      reason: reason || 'Manually Blocked Date',
+      updatedAt: new Date().toISOString(),
+    };
+    await setDoc(dateRef, newRecord, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `guides/${guideId}/busyDates/${dateStr}`);
   }
+};
 
-  // Also query Firestore to guarantee we don't accidentally remove a tour
+// Unblock a manually blocked date
+export const unblockGuideDate = async (guideId: string, dateStr: string) => {
+  // Guard: if there are confirmed tours, never remove the busy state!
   const toursQuery = query(
     collection(db, 'guides', guideId, 'tours'),
     where('date', '==', dateStr)
   );
   const toursSnap = await getDocs(toursQuery);
   if (!toursSnap.empty) {
-    throw new Error('This date has confirmed tours scheduled. To free this date, please edit or cancel the scheduled tour.');
+    throw new Error('This date has confirmed tours scheduled. To free this date, please edit or cancel the scheduled tour first.');
   }
 
   const dateRef = doc(db, 'guides', guideId, 'busyDates', dateStr);
-  const isCurrentlyBusy = Boolean(currentStatus?.isBusy);
+  try {
+    await deleteDoc(dateRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `guides/${guideId}/busyDates/${dateStr}`);
+  }
+};
+
+// Helper to generate array of ISO dates between start and end (inclusive)
+export function getDatesInRange(startDateStr: string, endDateStr: string): string[] {
+  const dates: string[] = [];
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+    return [startDateStr];
+  }
+
+  const current = new Date(start);
+  while (current <= end) {
+    const y = current.getFullYear();
+    const m = String(current.getMonth() + 1).padStart(2, '0');
+    const d = String(current.getDate()).padStart(2, '0');
+    dates.push(`${y}-${m}-${d}`);
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
+}
+
+// Block a date range in batch
+export const blockGuideDateRange = async (
+  guideId: string,
+  startDate: string,
+  endDate: string,
+  reason: string
+): Promise<number> => {
+  const dates = getDatesInRange(startDate, endDate);
+  if (dates.length === 0) return 0;
 
   try {
-    if (isCurrentlyBusy) {
-      await deleteDoc(dateRef);
-    } else {
-      const newRecord: BusyDateRecord = {
-        id: dateStr,
+    const batch = writeBatch(db);
+    for (const d of dates) {
+      const dateRef = doc(db, 'guides', guideId, 'busyDates', d);
+      const record: BusyDateRecord = {
+        id: d,
         guideId,
-        date: dateStr,
+        date: d,
         isBusy: true,
-        reason: reason || 'Manually Blocked Date',
-        updatedAt: new Date().toISOString(),
+        isManualBlock: true,
+        reason: reason || 'Manually Blocked Period',
+        updatedAt: new Date().toISOString()
       };
-      await setDoc(dateRef, newRecord);
+      batch.set(dateRef, record, { merge: true });
     }
+    await batch.commit();
+    return dates.length;
   } catch (error) {
-    handleFirestoreError(
-      error,
-      isCurrentlyBusy ? OperationType.DELETE : OperationType.WRITE,
-      `guides/${guideId}/busyDates/${dateStr}`
-    );
+    handleFirestoreError(error, OperationType.WRITE, `guides/${guideId}/busyDates/batch`);
+    return 0;
+  }
+};
+
+// Unblock a date range in batch (skips any dates that have confirmed tours)
+export const unblockGuideDateRange = async (
+  guideId: string,
+  startDate: string,
+  endDate: string
+): Promise<{ unblockedCount: number; protectedTourDates: string[] }> => {
+  const dates = getDatesInRange(startDate, endDate);
+  if (dates.length === 0) return { unblockedCount: 0, protectedTourDates: [] };
+
+  try {
+    // Find all tours in the user's collection to check protected dates
+    const toursQuery = query(collection(db, 'guides', guideId, 'tours'));
+    const toursSnap = await getDocs(toursQuery);
+    const tourDatesSet = new Set<string>();
+    toursSnap.docs.forEach(docSnap => {
+      const t = docSnap.data() as Tour;
+      if (t.date) tourDatesSet.add(t.date);
+    });
+
+    const batch = writeBatch(db);
+    let unblockedCount = 0;
+    const protectedTourDates: string[] = [];
+
+    for (const d of dates) {
+      if (tourDatesSet.has(d)) {
+        protectedTourDates.push(d);
+      } else {
+        const dateRef = doc(db, 'guides', guideId, 'busyDates', d);
+        batch.delete(dateRef);
+        unblockedCount++;
+      }
+    }
+
+    if (unblockedCount > 0) {
+      await batch.commit();
+    }
+
+    return { unblockedCount, protectedTourDates };
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `guides/${guideId}/busyDates/batch`);
+    return { unblockedCount: 0, protectedTourDates: [] };
   }
 };

@@ -58,15 +58,15 @@ ${bodyText.slice(0, 5000)}
 """
 
 Classification instructions:
-1. Determine if this email is an actual tour inquiry, booking request, or traveler message. Reject spam, newsletters, platform marketing announcements, password resets, or general receipts.
-2. If it IS a booking inquiry, extract:
+1. Determine if this email is an actual tour inquiry, booking request, or traveler message. Reject spam, newsletters, platform marketing announcements, password resets, or general receipts. Do NOT classify general travel updates or generic emails as booking requests.
+2. If it IS a booking inquiry, extract factual details only:
    - platform: Identify whether it's from 'TourHQ', 'Viator', 'GetYourGuide', 'Airbnb', 'Direct Email', or 'Other'.
-   - clientName: Name of the prospective traveler or lead guest.
+   - clientName: Name of the prospective traveler or lead guest (leave empty string if unknown; NEVER invent a fictional name).
    - clientEmail: Direct email if provided or platform alias.
    - clientPhone: Phone number/WhatsApp if provided, else empty string.
-   - destination: Target destination, city, or tour name (e.g., 'Samarkand Silk Road Walking Tour', 'Registan & Shakhrisabz', 'Bukhara Old Town').
-   - requestedDate: Standardized date 'YYYY-MM-DD' if identifiable, or the raw requested date phrase.
-   - groupSize: Number of travelers (integer; if unspecified default to 2).
+   - destination: Target destination, city, or tour name if specified in message.
+   - requestedDate: Standardized date 'YYYY-MM-DD' ONLY if an explicit tour date is specified in the message. If uncertain or unmentioned, return empty string. NEVER return today's date or the email received date as the requested tour date!
+   - groupSize: Number of travelers (integer if mentioned, else 0).
    - message: Concise summary of what the client is asking for (special interests, pickup requests, language preferences).
    - confidence: 'high' if clear booking parameters exist, 'medium' if partial, 'low' if vague.`;
 

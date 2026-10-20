@@ -1,0 +1,713 @@
+# GUIDE — COMPLETE PRODUCT REDESIGN AND FUNCTIONAL REBUILD
+
+You are working on my existing Guide repository: https://github.com/look-afk/Guide
+
+Your task is to transform this project into a genuinely functional, professional tool for an independent tour guide.
+
+The current application is unacceptable in its current state. The calendar looks poor, fake orders appear in the interface, some actions do not work correctly, and the actual workflow is unnecessarily complicated.
+
+**Do not just improve the styling. Understand the product, fix its functionality, redesign the interface, and verify the complete workflow.**
+
+You must work directly in the existing repository and implement the changes, not merely describe a plan.
+
+---
+
+## 1. UNDERSTAND THE ACTUAL PURPOSE
+
+Guide is a personal tour-management application.
+
+I receive booking inquiries from external platforms such as TourHQ, Viator, GetYourGuide, and potentially other tour-booking services. These platforms may send booking notifications and inquiries to my Gmail inbox.
+
+My workflow is simple:
+
+1. I open Guide and immediately see which dates are busy and which are available.
+2. I open Orders and see genuine booking inquiries received through my email.
+3. I inspect an inquiry and open the original email or the actual booking page on the platform.
+4. I verify the inquiry and decide whether to accept it.
+5. If I accept the booking, I do so directly on the external platform.
+6. I return to Guide and manually record the confirmed booking or mark the relevant dates as busy.
+7. I enter the dates, destination, reason, and any other useful information.
+8. Guide saves the information and updates my calendar.
+
+**Guide is my personal management tool. It must not pretend to accept bookings on external platforms automatically.**
+
+I remain in control of accepting reservations and managing my availability.
+
+Do not introduce unnecessary workflows, complicated dashboards, or features that do not support this process.
+
+---
+
+## 2. INSPECT THE ENTIRE EXISTING REPOSITORY FIRST
+
+Before making changes:
+
+- Inspect the complete repository structure.
+- Read the existing React and TypeScript components.
+- Inspect the authentication flow, Firebase configuration, Firestore data model, security rules, Gmail integration, API routes, and existing styles.
+- Identify every nonfunctional button, fake-data generator, broken interaction, duplicate implementation, and source of incorrect calendar state.
+- Trace how information moves from Gmail to Orders and from confirmed bookings to the calendar.
+- Identify missing environment variables, OAuth scopes, API configuration, and backend requirements.
+- Determine which existing features are functional and which are merely visual.
+
+Do not assume that a feature works because a component exists.
+
+Do not start by rewriting everything blindly. Understand the architecture, preserve working functionality, and replace defective implementations where necessary.
+
+Create a concise internal implementation plan and then proceed directly with the actual work.
+
+---
+
+## 3. COMPLETELY REDESIGN THE CALENDAR
+
+The calendar is the primary screen of the application. It must be simple, beautiful, readable, and immediately useful.
+
+The current calendar design is unacceptable. Rebuild its visual presentation and interaction model rather than applying superficial CSS changes.
+
+### Calendar requirements
+
+- Display a clear monthly calendar as the primary interface.
+- Provide intuitive previous-month and next-month navigation.
+- Include an obvious way to return to the current month.
+- Display the current month and year clearly.
+- Use a conventional seven-column calendar with correctly aligned weekdays and dates.
+- Correctly handle month boundaries, leap years, and dates from adjacent months.
+- Make the current date visually distinguishable from selected dates and busy dates.
+- Clearly distinguish available dates, manually blocked dates, and confirmed tour dates.
+- Use a restrained, consistent color system with accessible contrast.
+- Avoid overcrowding dates with text, excessive badges, icons, or unnecessary information.
+- Make the calendar usable on desktop, tablet, and mobile.
+- Keep the calendar as the visual centerpiece instead of surrounding it with unnecessary dashboard widgets.
+
+### Calendar interactions
+
+When I select a date, I should be able to:
+
+- See whether the date is available or busy.
+- See existing tours and their details.
+- Mark the date as busy.
+- Mark a manually blocked date as available again.
+- Add a reason for the blocked date.
+- Edit existing availability information.
+- Add a tour manually.
+- Edit an existing tour.
+- Cancel or delete a tour with a clear confirmation step.
+- Understand why a date cannot be made available if a confirmed tour still exists.
+
+For a manually blocked date, I should be able to enter a reason such as:
+
+"Private tour — Samarkand — unavailable for other bookings."
+
+For a confirmed tour, I should be able to record:
+
+- Tour date or date range.
+- Client name.
+- Destination.
+- Tour description.
+- Start time and end time, if applicable.
+- Number of guests, if known.
+- Booking source, if applicable.
+- Additional notes.
+- Reason for being unavailable, when useful.
+
+Do not force me to fill in unnecessary fields when I only want to block a date.
+
+### Date ranges
+
+Support blocking multiple consecutive days.
+
+For example, if I am unavailable on October 22 and October 23, I should be able to mark both dates as busy without creating two unrelated records manually.
+
+Allow me to specify a start date and end date and apply the change to the entire period.
+
+### Data integrity
+
+A date can have multiple tours or overlapping reasons for being unavailable.
+
+Never remove a busy date just because one tour was deleted or edited if another confirmed tour or manual block still requires that date to remain unavailable.
+
+Separate the concepts of:
+
+- Manually blocked availability.
+- Confirmed tours.
+- Booking inquiries that have not been accepted.
+
+Do not treat an unconfirmed inquiry as a confirmed tour.
+
+Do not silently overwrite existing booking details.
+
+Do not allow an accidental click on a calendar date to cancel a confirmed reservation.
+
+Use appropriate Firestore transactions or another reliable approach when multiple related records must be updated together.
+
+The calendar must reflect saved data accurately after refresh, sign-in, and navigation between sections.
+
+---
+
+## 4. REMOVE ALL FAKE ORDERS FROM THE REAL APPLICATION
+
+This is a critical requirement.
+
+The current project contains fake sample-order functionality, including a "Load TourHQ Samples" action and generated sample inquiries in the Gmail integration code.
+
+These must not appear in the normal production workflow.
+
+### Remove the following from production UI
+
+- "Load TourHQ Samples" and similar demo-loading buttons.
+- Generated TourHQ inquiries.
+- Generated Viator inquiries.
+- Generated GetYourGuide inquiries.
+- Fictional client names and contact details.
+- Fabricated booking messages.
+- Fake dates and artificial booking statuses presented as genuine.
+- Any logic that silently inserts sample orders into a real user's account.
+
+Search the entire repository for all sample-order generators, demo buttons, mock booking records, and automatic sample-data insertion.
+
+Remove their production usage completely.
+
+If tests need mock data, keep it isolated in test fixtures and never mix it with real user data.
+
+Do not simply hide the sample button while leaving code that creates fake orders through another route.
+
+**An empty Orders screen is acceptable. Fake orders are not.**
+
+When there are no real booking inquiries, show a polished empty state explaining that no booking inquiries have been found yet.
+
+Never generate fictional orders to make the application appear populated.
+
+---
+
+## 5. BUILD A RELIABLE GMAIL BOOKING-INQUIRY INTEGRATION
+
+The Orders section must display actual relevant booking inquiries from my Gmail inbox.
+
+Inspect the existing Gmail API implementation, OAuth configuration, token handling, search queries, email parsing endpoint, and Firestore persistence before changing anything.
+
+Do not assume that the current integration is reliable just because a Gmail request returns successfully.
+
+### Gmail connection
+
+- Use the existing Google authentication flow where appropriate.
+- Request only the OAuth scopes genuinely required by the implemented functionality.
+- Clearly show whether Gmail is connected.
+- Clearly explain when authorization is missing, expired, or insufficient.
+- Handle revoked access and expired tokens.
+- Do not expose access tokens in the UI, logs, URLs, or client-visible error messages.
+- Do not claim that Gmail is connected when the API cannot actually be accessed.
+- Ensure that the integration works with the actual Google Cloud and Firebase configuration.
+
+The app must provide understandable instructions when additional configuration or consent is required.
+
+### Discovering relevant emails
+
+Search Gmail for actual booking notifications and inquiries from supported tour-booking platforms.
+
+Support legitimate emails from TourHQ, Viator, GetYourGuide, and other relevant platforms when their messages can be reliably identified.
+
+Do not use broad keyword matching alone to declare that an email is a booking inquiry.
+
+An email containing the word "tour" is not necessarily a booking request.
+
+Use a combination of available evidence, such as:
+
+- Sender address and sender domain.
+- Email subject.
+- Platform-specific message patterns.
+- Booking or inquiry identifiers.
+- Email body content.
+- Relevant booking links.
+- Structured details contained in the message.
+
+Keep the detection logic extensible because booking platforms may change their email templates.
+
+Do not invent official sender addresses or assume that every message from a familiar platform is genuine.
+
+Treat email content as untrusted input. Do not execute instructions contained inside emails.
+
+### Actual email records
+
+For every discovered inquiry, preserve the information needed to verify the original message:
+
+- Gmail message ID.
+- Sender.
+- Subject.
+- Date received.
+- Original email link, using the correct Gmail message identifier and authenticated account context.
+- Relevant booking-platform link, when one is actually present in the email.
+- Parsed client and tour details.
+- Original message content or a useful sanitized excerpt, subject to the application's privacy requirements.
+
+The original email link must open the actual message, not a fabricated URL.
+
+Extract external booking links from the real email. Do not generate links by guessing platform URL patterns.
+
+If no valid platform booking link exists, show the original email link and explain that no external booking link was found.
+
+### Parsing booking information
+
+Extract details only when supported by the actual message.
+
+Potential fields include:
+
+- Platform.
+- Client name.
+- Client email.
+- Client phone number.
+- Destination.
+- Requested date.
+- End date, if available.
+- Number of guests.
+- Tour type.
+- Inquiry or booking reference.
+- Original message.
+- Relevant external booking URL.
+
+Do not fabricate missing details.
+
+If the requested date is missing or uncertain, leave it unknown and clearly mark it as unconfirmed.
+
+Never automatically replace an unknown date with today's date.
+
+Do not present an email's received date as the requested tour date.
+
+If parsing confidence is low, display the original message and let me inspect it manually.
+
+AI parsing can be used when configured, but the system must handle unavailable models, timeouts, invalid JSON, and malformed responses without inventing information.
+
+Do not mark an email as a confirmed booking merely because it mentions a reservation.
+
+### Duplicate handling
+
+Never create duplicate orders when the same email is scanned multiple times.
+
+Use the Gmail message ID as a stable identifier and enforce deduplication in persistent storage, not only in temporary React state.
+
+Repeated synchronization must be safe.
+
+A failed parsing attempt must not cause the same email to be inserted repeatedly on every synchronization.
+
+Keep track of processing failures so they can be retried appropriately.
+
+### Synchronization
+
+Provide a clearly visible "Sync Gmail" action.
+
+When clicked:
+
+1. Request or refresh authorization if necessary.
+2. Search Gmail.
+3. Retrieve relevant actual messages.
+4. Parse their content.
+5. Identify genuine booking inquiries.
+6. Deduplicate against previously stored messages.
+7. Save new inquiries in Firestore.
+8. Display a meaningful summary of the operation.
+
+Show loading, success, partial-success, and error states.
+
+Display the last successful synchronization time and connection status.
+
+Do not show a successful synchronization message if the request failed.
+
+While the application is open, implement sensible periodic synchronization if appropriate, with safeguards against overlapping requests and excessive API calls.
+
+Clean up timers and subscriptions when components unmount or the user signs out.
+
+Do not claim that emails are monitored continuously while the application is closed.
+
+If background synchronization is required, implement a suitable backend scheduler or Gmail push-notification architecture only if the available infrastructure supports it. Otherwise, document the limitation and provide a working manual-sync flow.
+
+Do not introduce an expensive or unnecessary backend without explaining the requirement.
+
+---
+
+## 6. REDESIGN THE ORDERS SECTION
+
+Orders must be a clean, practical inbox for reviewing booking inquiries.
+
+Do not turn it into a cluttered dashboard.
+
+### Each real order should display
+
+- Platform or sender identity.
+- Email subject.
+- Client name, if available.
+- Date received.
+- Requested tour date, if available.
+- Destination, if available.
+- Number of guests, if available.
+- Current review status.
+- A clear way to inspect the original message.
+- A link to the original Gmail message.
+- A link to the actual external booking page when the email contains one.
+
+Clearly distinguish known information from missing or uncertain information.
+
+Do not fill empty fields with invented values just to make the interface look complete.
+
+### Order review workflow
+
+When I open an order, show its details in a readable layout.
+
+I must be able to:
+
+1. Read the parsed information.
+2. Inspect the original message.
+3. Open the real email.
+4. Open the real booking-platform link when available.
+5. Decide what to do on the external platform myself.
+6. Return to Guide.
+7. Record the outcome and, if I accepted the booking, add it to my calendar.
+
+Guide must not automatically accept bookings, send acceptance messages, or claim that a reservation has been accepted externally.
+
+The application must distinguish between states such as:
+
+- New inquiry.
+- Reviewed.
+- Accepted externally and confirmed by me.
+- Rejected or declined by me.
+- Added to the calendar.
+
+Choose a clear, consistent state model that does not imply external confirmation without my explicit action.
+
+If I confirm that I accepted a booking externally, provide a straightforward way to record that confirmation and create a corresponding calendar entry.
+
+If the requested date is unknown, require me to enter or confirm the date before creating a dated tour.
+
+Do not silently convert an inquiry into a confirmed calendar event.
+
+Prevent duplicate calendar entries when the same order is reviewed or saved repeatedly.
+
+When a confirmed booking is linked to an order, maintain that relationship so that I can navigate between them.
+
+Do not delete an order merely because I remove or edit its calendar entry.
+
+---
+
+## 7. MAKE THE DESIGN GENUINELY PROFESSIONAL
+
+The current visual design needs a substantial overhaul.
+
+Do not just change the accent color, add shadows, or round the cards.
+
+Create a cohesive design system appropriate for a professional tour-management SaaS application.
+
+### Design direction
+
+Aim for a restrained, modern, premium interface with:
+
+- Excellent typography and readable hierarchy.
+- Consistent spacing and alignment.
+- Clear information architecture.
+- Carefully selected colors with accessible contrast.
+- Subtle borders and shadows.
+- Consistent radii and component sizes.
+- Refined interactive states.
+- Purposeful, restrained animations.
+- Clear visual distinction between primary and secondary actions.
+- A consistent icon system.
+- Excellent desktop and mobile responsiveness.
+
+Avoid:
+
+- Excessive gradients.
+- Neon colors and glowing effects.
+- Unnecessary glassmorphism.
+- Random decorative elements.
+- Excessive cards nested inside other cards.
+- Oversized dashboard statistics.
+- Huge empty spaces caused by poor layout.
+- Crowded calendar cells.
+- Inconsistent button styles.
+- Unnecessary labels and repeated information.
+- Generic AI-generated dashboard aesthetics.
+
+Do not use visual decoration as a substitute for usability.
+
+### Redesign every relevant component
+
+Inspect and improve:
+
+- Main navigation and header.
+- Calendar.
+- Date details panel.
+- Tour creation and editing forms.
+- Order list.
+- Order review interface.
+- Confirmation dialogs.
+- Buttons and dropdowns.
+- Loading states.
+- Empty states.
+- Error messages.
+- Success notifications.
+- Mobile navigation.
+
+Use reusable components where appropriate and remove obsolete or duplicated styles.
+
+Keep the interface visually consistent across every section.
+
+Do not make the interface more complicated than the workflow requires.
+
+---
+
+## 8. SIMPLIFY NAVIGATION AND APPLICATION STRUCTURE
+
+The application should focus on two main sections:
+
+**Calendar** — manage availability and confirmed tours.
+
+**Orders** — review genuine booking inquiries from Gmail.
+
+Make these sections immediately accessible and visually distinct.
+
+The calendar should be the default screen after successful sign-in.
+
+Do not add unnecessary dashboards, analytics pages, settings screens, or navigation items unless they are essential to the working product.
+
+Keep essential account and Gmail connection controls accessible without distracting from the main workflow.
+
+When switching between Calendar and Orders, preserve relevant user context where practical.
+
+Use clear labels instead of technical terminology.
+
+The application should be understandable without a tutorial.
+
+---
+
+## 9. PRESERVE AND FIX AUTHENTICATION
+
+Keep the existing Google authentication and Firebase integration where they are suitable.
+
+Verify that:
+
+- Sign-in works.
+- Sign-out works.
+- Authentication state is restored correctly.
+- Data loads for the authenticated user.
+- One guide cannot access another guide's private data.
+- Gmail authorization is handled separately and correctly where necessary.
+- Expired or revoked Google access is handled gracefully.
+- Loading states do not get stuck indefinitely.
+- Errors are surfaced clearly.
+
+Inspect Firestore security rules and verify that users can only access data they are authorized to access.
+
+Do not rely on hiding UI elements as a security mechanism.
+
+Never expose Firebase administrative credentials or private API keys in client-side code.
+
+Do not silently swallow errors that indicate data was not saved.
+
+If the current Firebase configuration is missing or incorrect, report exactly what must be configured rather than pretending the feature works.
+
+---
+
+## 10. DATA MODEL AND PERSISTENCE
+
+Review the existing Firestore structure before modifying it.
+
+Preserve existing user data whenever possible.
+
+Use a clear and consistent data model for:
+
+- Guide profiles.
+- Tours.
+- Manually blocked dates or date ranges.
+- Booking inquiries.
+- Relationships between confirmed orders and calendar tours.
+- Gmail synchronization state, where appropriate.
+
+Avoid storing contradictory copies of the same availability state without a clear source of truth.
+
+If existing records need migration, implement a safe migration strategy or document the required steps.
+
+Do not wipe the database to simplify implementation.
+
+Ensure that:
+
+- Creating a tour persists it.
+- Editing a tour persists the changes.
+- Deleting a tour updates availability correctly.
+- Blocking dates persists.
+- Unblocking dates persists.
+- Reviewing an order persists its status.
+- Synchronizing Gmail persists new inquiries.
+- Refreshing the page does not lose changes.
+- Repeated actions do not create duplicate records.
+- Errors during multi-step updates do not leave the application in a misleading state.
+
+Use transactions or batched writes where appropriate.
+
+---
+
+## 11. ERROR HANDLING AND EDGE CASES
+
+Handle common real-world situations properly:
+
+- No booking inquiries found.
+- Gmail access revoked.
+- Gmail API rate limits.
+- Network failures.
+- Partial synchronization failures.
+- Malformed email content.
+- Missing client information.
+- Unknown requested dates.
+- Invalid date ranges.
+- Multiple tours on the same day.
+- Editing a tour's date.
+- Deleting one of several tours on a date.
+- Manually blocking a date that already contains a confirmed tour.
+- Removing a manual block while a confirmed tour still exists.
+- Double-clicking a button.
+- Repeated synchronization.
+- Expired authentication sessions.
+- Firestore permission errors.
+- Mobile viewport overflow.
+
+Do not show a blank screen or silently fail when an error occurs.
+
+Provide useful, human-readable feedback.
+
+Ask for confirmation before destructive actions.
+
+Disable actions while they are processing when appropriate.
+
+---
+
+## 12. TECHNICAL IMPLEMENTATION RULES
+
+- Keep the existing React and TypeScript architecture where practical.
+- Preserve Firebase and the Gmail integration unless a specific implementation is defective.
+- Do not rebuild the application from scratch without a compelling technical reason.
+- Do not introduce unnecessary dependencies.
+- Do not replace working backend functionality with mock data.
+- Do not replace actual data with hardcoded arrays.
+- Do not leave TODO comments instead of implementing required functionality.
+- Do not create buttons that only look functional.
+- Do not claim that an API works without testing it.
+- Do not suppress TypeScript errors to make the build pass.
+- Do not use unsafe shortcuts that compromise user data.
+- Keep credentials and secrets out of the repository.
+- Follow the project's existing conventions unless they need correction.
+
+Before adding a library or external service, explain why it is necessary and whether it introduces a cost or additional configuration.
+
+If an external API cannot be tested because credentials are unavailable, implement the correct integration and explicitly report what could not be verified.
+
+---
+
+## 13. TEST THE COMPLETE USER WORKFLOW
+
+Do not finish after the interface looks better.
+
+Run the project and perform as many actual tests as the environment allows.
+
+### Calendar tests
+
+- Navigate between months.
+- Select dates.
+- Mark dates as busy.
+- Add a reason.
+- Block a date range.
+- Add a tour.
+- Edit a tour.
+- Move a tour to another date.
+- Delete a tour.
+- Verify that other tours on the same date remain protected.
+- Refresh the application and verify persistence.
+
+### Gmail and order tests
+
+- Verify the connection status.
+- Run a manual Gmail synchronization.
+- Verify how relevant real emails are identified.
+- Confirm that unrelated messages are not treated as bookings.
+- Verify that missing dates remain unknown.
+- Confirm that original email links open the correct messages.
+- Confirm that external links come from actual email content.
+- Run synchronization twice and verify that duplicate orders are not created.
+- Verify error handling when Gmail or the parser is unavailable.
+- Confirm that no fake sample orders are inserted.
+
+### Booking workflow tests
+
+Test this exact scenario:
+
+1. Sign in.
+2. Open the calendar and see that certain dates are available or busy.
+3. Open Orders and find a real booking inquiry.
+4. Open the original email or external booking link.
+5. Return to Guide after independently verifying the inquiry.
+6. Record the booking as accepted externally.
+7. Add the confirmed tour to the calendar.
+8. Specify the date, destination, client, and reason.
+9. Save the changes.
+10. Verify that the calendar displays the correct busy dates.
+11. Refresh the application.
+12. Verify that the tour and its details remain correct.
+13. Verify that the same order cannot accidentally create another identical tour.
+
+### Design tests
+
+- Inspect the calendar at desktop and mobile sizes.
+- Inspect the Orders screen.
+- Inspect all modals and forms.
+- Verify empty, loading, error, and success states.
+- Fix overflow, misalignment, inconsistent spacing, and unreadable text.
+- Ensure the application does not look broken when the account contains no orders.
+
+Run the available build, type-checking, linting, and automated tests. Fix the problems that are caused by your changes.
+
+Do not claim to have tested anything that you did not actually test.
+
+---
+
+## 14. REQUIRED FINAL RESULT
+
+The finished application must satisfy these principles:
+
+1. The calendar is simple, attractive, and reliable.
+2. Busy dates and confirmed tours are managed correctly.
+3. Orders contain actual relevant emails, not invented bookings.
+4. Every order provides access to its real source when available.
+5. I decide whether to accept a booking on the external platform.
+6. I manually record accepted bookings and manage my calendar.
+7. All changes persist correctly.
+8. Authentication and user data remain secure.
+9. The application works on desktop and mobile.
+10. No visible button is decorative or nonfunctional.
+11. The application handles errors honestly.
+12. The interface looks like a polished commercial product.
+
+### Final execution instructions
+
+Start by inspecting the repository and identifying the actual defects.
+
+Then implement the redesign and functionality improvements directly in the codebase.
+
+Do not stop after producing a plan, a list of recommendations, or a visual mockup.
+
+Do not spend all your effort on CSS while leaving the underlying logic broken.
+
+Prioritize in this order:
+
+1. Remove fake production orders and fake-order controls.
+2. Fix the core calendar and availability logic.
+3. Make Gmail synchronization and genuine inquiry handling reliable.
+4. Implement the correct order-review-to-calendar workflow.
+5. Redesign the entire interface.
+6. Test the complete workflow and fix regressions.
+
+At the end, provide a concise report containing:
+
+- What you changed.
+- Which files you modified.
+- Which fake-data paths you removed.
+- Which calendar and Gmail issues you fixed.
+- Which tests you actually ran and their results.
+- Which features require external credentials or Google Cloud configuration.
+- Any remaining limitations or unverified functionality.
+
+**The objective is not to make the existing bad application look slightly better. The objective is to turn Guide into the application described in this specification while preserving working functionality and real user data.**

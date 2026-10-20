@@ -12,20 +12,20 @@ import {
   updateOrderStatus,
   deleteGuideOrder,
   subscribeToGuideBusyDates,
-  toggleGuideDate,
+  blockGuideDate,
+  unblockGuideDate,
+  blockGuideDateRange,
+  unblockGuideDateRange,
   getAccessToken
 } from './lib/firebase';
-import { 
-  fetchBookingOrdersFromGmail, 
-  generateSandboxTestOrder, 
-  generateSamplePlatformOrders 
-} from './lib/gmail';
-import { Tour, Order, BusyDateMap } from './types';
+import { fetchBookingOrdersFromGmail } from './lib/gmail';
+import { Tour, Order, BusyDateMap, OrderStatus } from './types';
 import { Header, ActiveTab } from './components/Header';
 import { CalendarTab } from './components/CalendarTab';
 import { OrdersTab } from './components/OrdersTab';
 import { TourModal } from './components/TourModal';
 import { OrderReviewModal } from './components/OrderReviewModal';
+import { DateRangeModal } from './components/DateRangeModal';
 import { Loader2, Calendar as CalendarIcon, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
 export default function App() {
@@ -53,10 +53,13 @@ export default function App() {
   const [isOrderReviewModalOpen, setIsOrderReviewModalOpen] = useState(false);
   const [selectedOrderForReview, setSelectedOrderForReview] = useState<Order | null>(null);
 
+  const [isDateRangeModalOpen, setIsDateRangeModalOpen] = useState(false);
+  const [defaultRangeStartDate, setDefaultRangeStartDate] = useState<string | undefined>(undefined);
+
   // Ref to prevent overlapping syncs
   const isSyncingRef = useRef(false);
 
-  // Show Toast
+  // Toast Notification
   const showToast = useCallback((text: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 4500);
@@ -82,7 +85,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Listen to Firestore for current Guide's data
+  // Real-time Firestore Subscriptions
   useEffect(() => {
     if (!user) return;
 
@@ -114,7 +117,7 @@ export default function App() {
     return Object.keys(busyDates).length;
   }, [busyDates]);
 
-  // Existing message IDs to prevent duplicates
+  // Existing message IDs in Firestore to guarantee persistent deduplication
   const existingMessageIds = useMemo(() => {
     const set = new Set<string>();
     orders.forEach(o => {
@@ -123,7 +126,7 @@ export default function App() {
     return set;
   }, [orders]);
 
-  // Dates with confirmed tours map
+  // Set of dates that have confirmed tours
   const datesWithConfirmedTours = useMemo(() => {
     const set = new Set<string>();
     tours.forEach(t => {
@@ -132,27 +135,7 @@ export default function App() {
     return set;
   }, [tours]);
 
-  // Safe Date Toggle
-  const handleToggleDate = async (dateStr: string, hasTours: boolean) => {
-    if (!user) return;
-
-    // Check if this date has confirmed tours scheduled
-    if (hasTours || datesWithConfirmedTours.has(dateStr)) {
-      showToast(
-        `Date ${dateStr} has confirmed tour(s) booked. To free this date, please cancel or edit the scheduled tour.`,
-        'info'
-      );
-      return;
-    }
-
-    const current = busyDates[dateStr];
-    try {
-      await toggleGuideDate(user.uid, dateStr, current, false);
-      showToast(current?.isBusy ? `Date ${dateStr} is now Available.` : `Date ${dateStr} marked as Busy.`);
-    } catch (err: any) {
-      showToast(err.message || 'Error updating date.', 'error');
-    }
-  };
+  // ----------------- CALENDAR HANDLERS -----------------
 
   const handleSaveTour = async (tour: Tour, previousDate?: string) => {
     if (!user) return;
@@ -174,34 +157,115 @@ export default function App() {
     }
   };
 
+  // Quick single-date manual block with custom reason
+  const handleQuickBlockWithReason = async (dateStr: string, reason: string) => {
+    if (!user) return;
+    try {
+      await blockGuideDate(user.uid, dateStr, reason);
+      showToast(`Date ${dateStr} marked as Busy.`);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to block date.', 'error');
+    }
+  };
+
+  // Quick single-date manual unblock
+  const handleQuickUnblockDate = async (dateStr: string) => {
+    if (!user) return;
+    if (datesWithConfirmedTours.has(dateStr)) {
+      showToast(`Date ${dateStr} has confirmed tour(s). Cancel or edit the scheduled tour to free this date.`, 'info');
+      return;
+    }
+    try {
+      await unblockGuideDate(user.uid, dateStr);
+      showToast(`Date ${dateStr} is now Available.`);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to unblock date.', 'error');
+    }
+  };
+
+  // Block multiple consecutive days (Date Range)
+  const handleBlockDateRange = async (startDate: string, endDate: string, reason: string) => {
+    if (!user) return;
+    try {
+      const count = await blockGuideDateRange(user.uid, startDate, endDate, reason);
+      showToast(`Marked ${count} days as Busy (${startDate} to ${endDate}).`);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to block date range.', 'error');
+    }
+  };
+
+  // Unblock multiple consecutive days
+  const handleUnblockDateRange = async (startDate: string, endDate: string) => {
+    if (!user) return;
+    try {
+      const { unblockedCount, protectedTourDates } = await unblockGuideDateRange(user.uid, startDate, endDate);
+      if (protectedTourDates.length > 0) {
+        showToast(
+          `Freed ${unblockedCount} dates. ${protectedTourDates.length} date(s) remained protected due to scheduled tours.`,
+          'info'
+        );
+      } else {
+        showToast(`Freed ${unblockedCount} days (${startDate} to ${endDate}).`);
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to unblock date range.', 'error');
+    }
+  };
+
+  // ----------------- ORDERS HANDLERS -----------------
+
+  const handleMarkReviewed = async (order: Order) => {
+    if (!user) return;
+    try {
+      await updateOrderStatus(user.uid, order.id, 'reviewed');
+      showToast(`Inquiry from ${order.clientName || 'Traveler'} marked as Reviewed.`);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update order.', 'error');
+    }
+  };
+
+  const handleDeclineOrder = async (order: Order) => {
+    if (!user) return;
+    try {
+      await updateOrderStatus(user.uid, order.id, 'declined');
+      showToast(`Inquiry from ${order.clientName || 'Traveler'} marked as Declined.`);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to decline order.', 'error');
+    }
+  };
+
+  const handleSaveOrderStatus = async (orderId: string, status: OrderStatus, updatedFields?: Partial<Order>) => {
+    if (!user) return;
+    try {
+      await updateOrderStatus(user.uid, orderId, status);
+      if (updatedFields && Object.keys(updatedFields).length > 0) {
+        const existing = orders.find(o => o.id === orderId);
+        if (existing) {
+          await saveGuideOrder(user.uid, {
+            ...existing,
+            ...updatedFields,
+            status,
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
+      showToast(`Inquiry status updated to ${status}.`);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update order.', 'error');
+    }
+  };
+
   const handleDeleteOrder = async (order: Order) => {
     if (!user) return;
     try {
       await deleteGuideOrder(user.uid, order.id);
-      showToast(`Booking order from ${order.clientName} removed.`);
+      showToast('Booking inquiry record removed.');
     } catch (err: any) {
       showToast(err.message || 'Failed to delete order.', 'error');
     }
   };
 
-  const handleClearDemoOrders = async () => {
-    if (!user) return;
-    const demoOrders = orders.filter(o => o.isTestOrder);
-    if (demoOrders.length === 0) {
-      showToast('No test orders to clear.', 'info');
-      return;
-    }
-    try {
-      for (const order of demoOrders) {
-        await deleteGuideOrder(user.uid, order.id);
-      }
-      showToast(`Cleared ${demoOrders.length} sandbox demo booking inquiries.`);
-    } catch (err) {
-      showToast('Failed to clear some test orders.', 'error');
-    }
-  };
-
-  // Confirm order to calendar
+  // Confirm order and schedule to Calendar
   const handleConfirmOrderToCalendar = async (order: Order, tourTime: string, reason: string) => {
     if (!user) return;
 
@@ -210,14 +274,14 @@ export default function App() {
       return;
     }
 
-    const tourId = `tour-from-order-${Date.now()}`;
+    const tourId = order.calendarTourId || `tour-from-order-${order.id}`;
     const newTour: Tour = {
       id: tourId,
       guideId: user.uid,
-      destination: order.destination,
+      destination: order.destination || 'Private Guided Tour',
       date: order.requestedDate,
       time: tourTime || '09:30 - 14:00',
-      clientName: order.clientName,
+      clientName: order.clientName || 'Traveler',
       clientEmail: order.clientEmail,
       clientPhone: order.clientPhone,
       groupSize: order.groupSize || 2,
@@ -234,16 +298,18 @@ export default function App() {
       // 1. Save Tour & mark calendar date as busy
       await saveGuideTour(user.uid, newTour);
 
-      // 2. Update Order status
-      await updateOrderStatus(user.uid, order.id, 'confirmed', tourId);
+      // 2. Update Order status to 'scheduled' and link calendarTourId
+      await updateOrderStatus(user.uid, order.id, 'scheduled', tourId);
 
-      showToast(`Order confirmed! Tour added to Calendar on ${order.requestedDate}.`);
+      showToast(`Confirmed! Tour recorded on Calendar for ${order.requestedDate}.`);
+      setActiveTab('calendar');
     } catch (err: any) {
       showToast(err.message || 'Failed to add tour to calendar.', 'error');
     }
   };
 
-  // Centralized Gmail Sync Function (used for both manual clicks and periodic background checks)
+  // ----------------- GMAIL INTEGRATION -----------------
+
   const executeGmailSync = useCallback(async (isManualTrigger: boolean = true) => {
     if (!user) return;
     if (isSyncingRef.current) return;
@@ -270,21 +336,21 @@ export default function App() {
 
       const result = await fetchBookingOrdersFromGmail(currentToken, user.uid, existingMessageIds);
 
-      // Save extracted orders into Firestore
+      // Save extracted genuine orders into Firestore
       for (const order of result.newOrders) {
         await saveGuideOrder(user.uid, order);
       }
 
       setLastSyncTime(new Date());
 
-      const report = `Scanned ${result.scannedCount} emails · Found ${result.newOrders.length} new booking inquiries · ${result.duplicateCount} already synced · ${result.rejectedCount} non-booking messages filtered.`;
+      const report = `Scanned ${result.scannedCount} emails · Found ${result.newOrders.length} new booking inquiries · ${result.duplicateCount} already saved · ${result.rejectedCount} non-booking messages filtered.`;
       setSyncReport(report);
 
       if (isManualTrigger) {
         showToast(
           result.newOrders.length > 0
             ? `Synced ${result.newOrders.length} new booking inquiries from Gmail!`
-            : 'Gmail checked. No new booking inquiries found.',
+            : 'Gmail scan complete. No new booking inquiries found.',
           'info'
         );
       }
@@ -299,16 +365,14 @@ export default function App() {
     }
   }, [user, accessToken, existingMessageIds, showToast]);
 
-  // Automatic periodic email synchronization while the app is open (every 3 minutes)
+  // Periodic email sync (every 3 minutes while app is open)
   useEffect(() => {
     if (!user || !accessToken) return;
 
-    // Run first sync quietly after 5 seconds on load
     const initialTimer = setTimeout(() => {
       executeGmailSync(false);
-    }, 5000);
+    }, 4000);
 
-    // Periodic sync interval: 3 minutes (180,000 ms)
     const interval = setInterval(() => {
       executeGmailSync(false);
     }, 180000);
@@ -318,20 +382,6 @@ export default function App() {
       clearInterval(interval);
     };
   }, [user, accessToken, executeGmailSync]);
-
-  // Load Sample Sandbox Orders (TourHQ, Viator, GetYourGuide)
-  const handleLoadSandboxOrders = async () => {
-    if (!user) return;
-    try {
-      const demoOrders = generateSamplePlatformOrders(user.uid);
-      for (const order of demoOrders) {
-        await saveGuideOrder(user.uid, order);
-      }
-      showToast('Loaded sample booking inquiries from TourHQ, Viator, and GetYourGuide!');
-    } catch (err: any) {
-      showToast('Failed to load sample bookings.', 'error');
-    }
-  };
 
   // Loading Screen
   if (authLoading) {
@@ -358,7 +408,7 @@ export default function App() {
           <div className="space-y-2">
             <h1 className="text-2xl font-bold tracking-tight text-white">Guide Tour Management</h1>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Manage your personal tour availability calendar and automatically detect incoming booking requests from TourHQ, Viator, and incoming Gmail messages.
+              Your personal calendar for tracking tour availability and inspecting genuine booking inquiries from TourHQ, Viator, and Gmail.
             </p>
           </div>
 
@@ -444,17 +494,34 @@ export default function App() {
           <CalendarTab
             tours={tours}
             busyDates={busyDates}
-            onToggleDate={handleToggleDate}
+            onToggleDate={async (dateStr, hasTours) => {
+              if (hasTours || datesWithConfirmedTours.has(dateStr)) {
+                showToast(`Date ${dateStr} has confirmed tours scheduled. Edit or cancel the tour to unblock.`, 'info');
+                return;
+              }
+              const current = busyDates[dateStr];
+              if (current?.isBusy) {
+                await handleQuickUnblockDate(dateStr);
+              } else {
+                await handleQuickBlockWithReason(dateStr, 'Manually Blocked Date');
+              }
+            }}
             onOpenAddTour={(date) => {
               setDefaultTourDate(date);
               setSelectedTourForEdit(null);
               setIsTourModalOpen(true);
+            }}
+            onOpenDateRangeModal={(date) => {
+              setDefaultRangeStartDate(date);
+              setIsDateRangeModalOpen(true);
             }}
             onEditTour={(tour) => {
               setSelectedTourForEdit(tour);
               setIsTourModalOpen(true);
             }}
             onDeleteTour={handleDeleteTour}
+            onQuickBlockWithReason={handleQuickBlockWithReason}
+            onQuickUnblockDate={handleQuickUnblockDate}
           />
         )}
 
@@ -468,18 +535,8 @@ export default function App() {
             userEmail={user.email}
             lastSyncTime={lastSyncTime}
             onOpenConnectGmail={() => signInGuide()}
-            onAcceptOrder={(order) => {
-              updateOrderStatus(user.uid, order.id, 'accepted');
-              showToast(`Order from ${order.clientName} marked as Accepted.`);
-            }}
-            onRejectOrder={(order) => {
-              updateOrderStatus(user.uid, order.id, 'rejected');
-              showToast(`Order from ${order.clientName} declined.`);
-            }}
-            onMarkProcessed={(order) => {
-              updateOrderStatus(user.uid, order.id, 'processed');
-              showToast(`Order marked as Processed.`);
-            }}
+            onMarkReviewed={handleMarkReviewed}
+            onDeclineOrder={handleDeclineOrder}
             onConfirmToCalendar={(order) => {
               setSelectedOrderForReview(order);
               setIsOrderReviewModalOpen(true);
@@ -489,12 +546,6 @@ export default function App() {
               setIsOrderReviewModalOpen(true);
             }}
             onDeleteOrder={handleDeleteOrder}
-            onAddManualOrder={() => {
-              setSelectedOrderForReview(null);
-              setIsOrderReviewModalOpen(true);
-            }}
-            onLoadSandboxDemo={handleLoadSandboxOrders}
-            onClearDemoOrders={handleClearDemoOrders}
             syncReport={syncReport}
           />
         )}
@@ -521,20 +572,25 @@ export default function App() {
           setSelectedOrderForReview(null);
         }}
         onConfirmToCalendar={handleConfirmOrderToCalendar}
-        onSaveOnly={(order) => {
-          saveGuideOrder(user.uid, order);
-          showToast(`Order details updated.`);
-        }}
+        onSaveStatusOnly={handleSaveOrderStatus}
         order={selectedOrderForReview}
         guideId={user.uid}
       />
 
-      {/* Footer with cloud configuration notice */}
+      <DateRangeModal
+        isOpen={isDateRangeModalOpen}
+        onClose={() => setIsDateRangeModalOpen(false)}
+        initialStartDate={defaultRangeStartDate}
+        onBlockRange={handleBlockDateRange}
+        onUnblockRange={handleUnblockDateRange}
+      />
+
+      {/* Clean Footer */}
       <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-800/80 px-4">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>GuideOps · Professional Tour Calendar & Platform Booking Management</span>
+          <span>Guide · Personal Tour Calendar & Platform Inquiry Management</span>
           <span className="text-[11px] text-slate-500">
-            Real-time Gmail sync active during app session · Firebase Firestore persistent
+            Real-time Gmail inquiry scanning · Firestore persistent
           </span>
         </div>
       </footer>
