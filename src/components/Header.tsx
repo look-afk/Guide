@@ -1,6 +1,6 @@
 import React from 'react';
 import { User } from 'firebase/auth';
-import { Calendar, Inbox, LogOut, Compass, RefreshCw, Mail } from 'lucide-react';
+import { Calendar, Inbox, LogOut, Compass, RefreshCw } from 'lucide-react';
 
 export type ActiveTab = 'calendar' | 'orders';
 
@@ -46,9 +46,10 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Zone 2: Navigation Tabs (Calendar & Orders) */}
-        <nav className="flex items-center gap-1 sm:gap-2">
+        <nav className="flex items-center gap-1 sm:gap-2" aria-label="Main">
           <button
             onClick={() => setActiveTab('calendar')}
+            aria-current={activeTab === 'calendar' ? 'page' : undefined}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
               activeTab === 'calendar'
                 ? 'bg-slate-800 text-white font-semibold shadow-sm'
@@ -61,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('orders')}
+            aria-current={activeTab === 'orders' ? 'page' : undefined}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors relative ${
               activeTab === 'orders'
                 ? 'bg-slate-800 text-white font-semibold shadow-sm'
@@ -70,7 +72,8 @@ export const Header: React.FC<HeaderProps> = ({
             <Inbox className="w-4 h-4 text-cyan-400" />
             <span>Orders</span>
             {newOrdersCount > 0 && (
-              <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 text-[10px] font-bold rounded-full">
+              // BUG FIX: "py-0.2" is not a valid Tailwind class (no padding was applied).
+              <span className="px-1.5 py-0.5 bg-amber-500 text-slate-950 text-[10px] font-bold rounded-full" aria-label={`${newOrdersCount} new`}>
                 {newOrdersCount}
               </span>
             )}
@@ -116,6 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={onSignOut}
                 title="Sign Out"
+                aria-label="Sign out"
                 className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
