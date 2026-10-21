@@ -372,13 +372,13 @@ export default function App() {
 
       setLastSyncTime(new Date());
 
-      const report = \`Scanned \${result.scannedCount} emails · Found \${result.newOrders.length} new booking inquiries · \${result.duplicateCount} already saved · \${result.rejectedCount} non-booking messages filtered.\`;
+      const report = `Scanned ${result.scannedCount} emails · Found ${result.newOrders.length} new booking inquiries · ${result.duplicateCount} already saved · ${result.rejectedCount} non-booking messages filtered.`;
       setSyncReport(report);
 
       if (isManualTrigger) {
         showToast(
           result.newOrders.length > 0
-            ? \`Synced \${result.newOrders.length} new booking inquiries from Gmail!\`
+            ? `Synced ${result.newOrders.length} new booking inquiries from Gmail!`
             : 'Gmail scan complete. No new booking inquiries found.',
           'info'
         );
