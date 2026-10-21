@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -278,4 +278,94 @@ footer {
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+
+/* Performance and phone-first layout */
+body::before {
+  animation: none !important;
+  transform: none !important;
+  background:
+    radial-gradient(38rem 32rem at 12% 10%, rgba(116,92,255,.28), transparent 62%),
+    radial-gradient(34rem 30rem at 88% 14%, rgba(34,190,220,.20), transparent 62%),
+    var(--base) !important;
+}
+body::after { display: none !important; }
+main > div > div,
+main [class*="bg-[#111827]"],
+main [class*="bg-[#0B0F17]"],
+main [class*="bg-slate-900"],
+[class*="bg-[#111827]"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+@media (max-width: 640px) {
+  html, body, #root { width: 100%; min-width: 0; overflow-x: clip; }
+  header.sticky > .guide-header-inner {
+    min-height: 0 !important; height: auto !important; padding: 10px 12px !important;
+    display: flex !important; flex-wrap: wrap !important; justify-content: space-between !important; gap: 10px 8px !important;
+  }
+  .guide-brand { order: 1; gap: 8px !important; }
+  .guide-brand img { width: 32px !important; height: 32px !important; }
+  .guide-brand .guide-brand-title { font-size: 17px !important; }
+  .guide-brand .guide-brand-subtitle { font-size: 8px !important; }
+  .guide-header-actions { order: 2; margin-left: auto; gap: 8px !important; }
+  .guide-sync-button { width: 38px !important; height: 38px !important; padding: 0 !important; justify-content: center !important; }
+  .guide-sync-button > span { display: none !important; }
+  .guide-profile { padding-left: 8px !important; gap: 6px !important; }
+  .guide-profile img, .guide-profile > div:first-child { width: 30px !important; height: 30px !important; }
+  .guide-nav { order: 3; width: 100%; display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px !important; }
+  .guide-nav button { min-height: 42px; justify-content: center; padding: 9px 8px !important; font-size: 13px !important; }
+  main { padding: 12px 10px 22px !important; }
+  main .compact-calendar { gap: 10px !important; }
+  .compact-calendar > :first-child { padding: 12px !important; gap: 12px !important; }
+  .compact-calendar > :first-child > :first-child { flex-wrap: wrap; gap: 8px !important; }
+  .compact-calendar > :first-child > :last-child { display: grid !important; grid-template-columns: 1fr 1fr; width: 100%; gap: 8px !important; }
+  .compact-calendar > :first-child > :last-child button { justify-content: center; min-height: 42px; white-space: normal !important; padding: 9px 8px !important; }
+  .compact-month-panel { padding: 8px !important; border-radius: 16px !important; }
+  .compact-month-grid { gap: 4px !important; }
+  .compact-month-grid > [role="button"] {
+    height: auto !important; min-height: clamp(44px, 12vw, 58px) !important; padding: 4px 2px !important;
+    border-radius: 9px !important; box-shadow: none !important; backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important; transition: background-color .12s ease, border-color .12s ease !important;
+  }
+  .compact-month-grid > [role="button"] > div:first-child { justify-content: center !important; }
+  .compact-month-grid > [role="button"] > div:first-child > span:first-child {
+    min-width: 24px !important; height: 24px !important; font-size: 12px !important;
+  }
+  .compact-month-grid > [role="button"]:hover { transform: none !important; }
+  .compact-calendar .compact-month-panel > .pt-2 { font-size: 10px !important; }
+  .compact-calendar .compact-month-panel > .pt-2 > span:last-child { display: none; }
+  header.sticky, button, input, textarea, select {
+    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  }
+  main > div > div, main [class*="bg-[#111827]"] {
+    box-shadow: 0 6px 18px -12px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  }
+  [class*="fixed"][class*="inset-0"] {
+    padding: 12px !important; overflow-y: auto !important; align-items: flex-start !important;
+    background: rgba(4,6,14,.88) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  }
+  [class*="fixed"][class*="inset-0"] > div {
+    width: 100% !important; max-width: 100% !important; max-height: calc(100dvh - 24px) !important;
+    overflow-y: auto !important; margin: auto 0 !important;
+  }
+  [class*="fixed"][class*="bottom-6"] { left: 12px !important; right: 12px !important; bottom: 12px !important; }
+  footer { padding: 14px 12px !important; }
+  footer > div { align-items: flex-start !important; text-align: left !important; }
+  footer span { overflow-wrap: anywhere; }
+  .compact-calendar, main .space-y-6 { gap: 12px !important; }
+  main [class*="grid-cols-2"] { min-width: 0; }
+  input, textarea, select { font-size: 16px !important; min-height: 42px; }
+  button { touch-action: manipulation; }
+}
+@media (max-width: 380px) {
+  .guide-brand .guide-brand-subtitle { display: none !important; }
+  .guide-brand { gap: 6px !important; }
+  .guide-nav button { font-size: 12px !important; }
+  .compact-month-grid { gap: 3px !important; }
+  .compact-month-grid > [role="button"] { min-height: 42px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none !important; }
 }
