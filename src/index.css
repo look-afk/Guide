@@ -369,3 +369,145 @@ main [class*="bg-slate-900"],
 @media (prefers-reduced-motion: reduce) {
   body::before { animation: none !important; }
 }
+
+
+/* Mobile layout + native touch scrolling fixes */
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto;
+}
+body { touch-action: pan-y; }
+#root { min-height: 100vh; min-height: 100dvh; }
+@media (max-width: 640px) {
+  header.sticky {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    max-width: 100%;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  header.sticky > .guide-header-inner {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand actions"
+      "nav nav";
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 10px 12px !important;
+    gap: 10px 8px !important;
+  }
+  .guide-brand {
+    grid-area: brand;
+    min-width: 0;
+    max-width: 100%;
+    gap: 7px !important;
+    overflow: hidden;
+  }
+  .guide-brand img { flex: 0 0 30px; width: 30px !important; height: 30px !important; }
+  .guide-brand > div { min-width: 0; }
+  .guide-brand .guide-brand-title { font-size: 16px !important; letter-spacing: .12em !important; }
+  .guide-brand .guide-brand-subtitle { font-size: 8px !important; letter-spacing: .12em !important; }
+  .guide-header-actions {
+    grid-area: actions;
+    min-width: 0;
+    margin: 0 !important;
+    gap: 6px !important;
+    justify-self: end;
+  }
+  .guide-sync-button {
+    width: 36px !important;
+    min-width: 36px;
+    height: 36px !important;
+    flex: 0 0 36px;
+    padding: 0 !important;
+  }
+  .guide-profile {
+    min-width: 0;
+    padding-left: 6px !important;
+    gap: 5px !important;
+  }
+  .guide-profile img, .guide-profile > div:first-child {
+    flex: 0 0 28px;
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .guide-profile button { padding: 5px !important; }
+  .guide-nav {
+    grid-area: nav;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100% !important;
+    min-width: 0;
+    gap: 8px !important;
+  }
+  .guide-nav button {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    justify-content: center;
+    gap: 6px !important;
+    padding: 8px 6px !important;
+    white-space: nowrap;
+    font-size: 12px !important;
+    transition: none !important;
+    box-shadow: none !important;
+  }
+  .guide-nav button > span { min-width: 0; }
+  main, main > div, .compact-calendar, .compact-month-panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+  main { overflow: visible !important; }
+  main > div > div,
+  main [class*="bg-[#111827]"],
+  main [class*="bg-[#0B0F17]"],
+  main [class*="bg-slate-900"],
+  main [class*="bg-slate-950"],
+  main [class*="bg-slate-800"],
+  [class*="bg-[#111827]"],
+  header.sticky,
+  button, input, textarea, select,
+  [role="button"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  main > div > div,
+  main [class*="bg-[#111827]"],
+  main [class*="bg-[#0B0F17]"] {
+    box-shadow: none !important;
+  }
+  button { transition: none !important; }
+  .compact-month-grid > [role="button"] {
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  [class*="fixed"][class*="inset-0"] {
+    position: fixed;
+    inset: 0;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    padding: 12px !important;
+    align-items: flex-start !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+@media (max-width: 380px) {
+  .guide-brand .guide-brand-subtitle { display: none !important; }
+  .guide-nav button { gap: 5px !important; padding-inline: 4px !important; font-size: 11px !important; }
+}
