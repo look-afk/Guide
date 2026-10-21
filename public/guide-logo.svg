@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Guide compass logo</title>
+  <rect width="128" height="128" rx="24" fill="#F4F0E8"/>
+  <circle cx="64" cy="64" r="43" fill="none" stroke="#111111" stroke-width="2.5"/>
+  <circle cx="64" cy="64" r="34" fill="none" stroke="#111111" stroke-width="1" opacity=".45"/>
+  <path d="M64 25 71 57 103 64 71 71 64 103 57 71 25 64 57 57Z" fill="#111111"/>
+  <path d="M64 39 68 60 89 64 68 68 64 89 60 68 39 64 60 60Z" fill="#F4F0E8"/>
+  <circle cx="64" cy="64" r="4" fill="#111111"/>
+  <path d="M64 13v8M64 107v8M13 64h8M107 64h8" stroke="#111111" stroke-width="2" stroke-linecap="round"/>
+</svg>
