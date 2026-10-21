@@ -174,3 +174,82 @@ input, textarea, select {
     animation-duration: 0.01ms !important;
   }
 }
+
+
+/* Refined black glassmorphism calendar — visible layered glass, not flat opaque cards */
+body {
+  background:
+    radial-gradient(ellipse at 16% 7%, rgba(125, 87, 255, .24), transparent 34rem),
+    radial-gradient(ellipse at 86% 22%, rgba(58, 130, 165, .15), transparent 30rem),
+    radial-gradient(ellipse at 50% 100%, rgba(130, 80, 170, .08), transparent 40rem),
+    #07080b !important;
+  background-attachment: fixed !important;
+}
+main {
+  max-width: 1500px !important;
+  padding-top: 30px !important;
+}
+main > div > div,
+main [class*="bg-[#111827]"] {
+  background: linear-gradient(145deg, rgba(30, 31, 40, .70), rgba(14, 15, 20, .58)) !important;
+  border: 1px solid rgba(255,255,255,.13) !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.11), inset 0 -1px 0 rgba(255,255,255,.025) !important;
+  backdrop-filter: blur(28px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
+}
+main [class*="min-h-[105px]"],
+main [class*="min-h-[120px]"] {
+  min-height: 132px !important;
+  border-radius: 16px !important;
+  padding: 11px !important;
+  background: linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.012)) !important;
+  border: 1px solid rgba(255,255,255,.095) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.055), 0 6px 18px rgba(0,0,0,.12) !important;
+  backdrop-filter: blur(12px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(145%) !important;
+}
+main [class*="min-h-[105px]"]:hover,
+main [class*="min-h-[120px]"]:hover {
+  border-color: rgba(190,170,255,.42) !important;
+  background: linear-gradient(145deg, rgba(190,170,255,.105), rgba(255,255,255,.025)) !important;
+}
+main [class*="ring-2"] {
+  border-color: rgba(196,180,255,.75) !important;
+  background: linear-gradient(145deg, rgba(153,120,255,.20), rgba(255,255,255,.045)) !important;
+  box-shadow: 0 0 0 1px rgba(196,180,255,.22), 0 0 26px rgba(137,103,255,.13), inset 0 1px 0 rgba(255,255,255,.14) !important;
+}
+main [class*="border-emerald-500/40"] {
+  background: linear-gradient(145deg, rgba(77,190,145,.11), rgba(255,255,255,.018)) !important;
+  border-color: rgba(110,231,183,.25) !important;
+}
+main [class*="border-amber-500/40"] {
+  background: linear-gradient(145deg, rgba(225,167,64,.11), rgba(255,255,255,.018)) !important;
+  border-color: rgba(251,191,36,.25) !important;
+}
+main [class*="bg-emerald-500/15"] {
+  background: rgba(95, 220, 170, .13) !important;
+  border-color: rgba(110,231,183,.22) !important;
+}
+main [class*="bg-amber-500/15"] {
+  background: rgba(245, 190, 80, .12) !important;
+  border-color: rgba(251,191,36,.22) !important;
+}
+main button[class*="bg-emerald-400"] {
+  background: linear-gradient(135deg, #d0c1ff, #a48cff) !important;
+  color: #100c19 !important;
+  border: 1px solid rgba(255,255,255,.24) !important;
+  box-shadow: 0 8px 24px rgba(151,121,255,.23), inset 0 1px 0 rgba(255,255,255,.5) !important;
+}
+@supports not ((backdrop-filter: blur(1px))) {
+  main > div > div, main [class*="bg-[#111827]"] {
+    background: rgba(19,20,27,.96) !important;
+  }
+}
+@media (max-width: 640px) {
+  main { padding-top: 16px !important; }
+  main [class*="min-h-[105px]"], main [class*="min-h-[120px]"] {
+    min-height: 82px !important;
+    padding: 6px !important;
+    border-radius: 10px !important;
+  }
+}

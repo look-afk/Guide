@@ -12,6 +12,7 @@ interface HeaderProps {
   newOrdersCount: number;
   busyDaysCount: number;
   onSyncGmail: () => void;
+  onConnectGmail: () => void;
   isSyncingGmail: boolean;
   hasGmailAccess: boolean;
 }
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSignOut,
   newOrdersCount,
   onSyncGmail,
+  onConnectGmail,
   isSyncingGmail,
   hasGmailAccess,
 }) => {
@@ -77,17 +79,15 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Zone 3: Gmail Sync & Profile */}
         <div className="flex items-center gap-3 shrink-0">
-          {hasGmailAccess && (
-            <button
-              onClick={onSyncGmail}
-              disabled={isSyncingGmail}
-              title="Sync incoming booking requests from Gmail"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isSyncingGmail ? 'animate-spin' : ''}`} />
-              <span>{isSyncingGmail ? 'Scanning...' : 'Sync Gmail'}</span>
-            </button>
-          )}
+          <button
+            onClick={hasGmailAccess ? onSyncGmail : onConnectGmail}
+            disabled={isSyncingGmail}
+            title={hasGmailAccess ? "Sync booking inquiries from Gmail" : "Connect Gmail and grant read-only access"}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-100 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-violet-300 ${isSyncingGmail ? 'animate-spin' : ''}`} />
+            <span>{isSyncingGmail ? 'Scanning...' : hasGmailAccess ? 'Sync Gmail' : 'Connect Gmail'}</span>
+          </button>
 
           {user && (
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
