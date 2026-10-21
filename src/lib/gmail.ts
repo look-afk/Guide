@@ -9,6 +9,20 @@ export interface GmailFetchResult {
   errorCount: number;
 }
 
+// Thrown when Google rejects the access token (they expire after ~1 hour).
+// The UI uses this to ask the guide to reconnect instead of failing silently.
+export class GmailAuthError extends Error {
+  constructor(message = 'Your Gmail session expired. Please reconnect Gmail.') {
+    super(message);
+    this.name = 'GmailAuthError';
+  }
+}
+
+// BUG FIX: messages that were already classified as "not a booking" used to be
+// re-downloaded and re-sent to the AI parser on every 3-minute sync. Remember
+// them for the lifetime of the page so each email is only analysed once.
+const rejectedMessageIds = new Set<string>();
+
 // Decode Base64URL string from Gmail API
 function decodeBase64Url(data: string): string {
   try {
@@ -115,6 +129,13 @@ function isRealIsoDate(value: string): boolean {
   const [year, month, day] = value.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+// BUG FIX: `new Date(badHeader).toISOString()` throws a RangeError, which used
+// to silently drop an otherwise valid booking inquiry.
+function safeIsoDate(value: string): string {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
 // Parse explicit calendar dates from subject or body (strictly avoids guessing or substituting today)
@@ -243,8 +264,7 @@ function fallbackHeuristicParser(
     lowerSubject.includes('special offer') ||
     lowerSubject.includes('limited-time offer') ||
     lowerSubject.includes('discount') ||
-    lowerSubject.includes('monthly report') ||
-    lowerSubject.includes('newsletter');
+    lowerSubject.includes('monthly report');
 
   // A platform sender alone is not enough: newsletters and generic platform notifications are common.
   const isBookingRequest = !isExcluded && (hasStrongSubjectSignal || hasBodyInquirySignal);
@@ -312,6 +332,10 @@ export async function fetchBookingOrdersFromGmail(
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
+  if (listResponse.status === 401) {
+    throw new GmailAuthError();
+  }
+
   if (!listResponse.ok) {
     const errorJson = await listResponse.json().catch(() => ({}));
     throw new Error(
@@ -334,6 +358,12 @@ export async function fetchBookingOrdersFromGmail(
       continue;
     }
 
+    // 1b. Already analysed earlier in this session and found not to be a booking
+    if (rejectedMessageIds.has(msg.id)) {
+      rejectedCount++;
+      continue;
+    }
+
     // 2. Check Firestore persistent storage to ensure deduplication
     const alreadyInDb = await checkOrderExistsByMessageId(guideId, msg.id);
     if (alreadyInDb) {
@@ -348,6 +378,10 @@ export async function fetchBookingOrdersFromGmail(
       const msgRes = await fetch(msgUrl, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
+
+      if (msgRes.status === 401) {
+        throw new GmailAuthError();
+      }
 
       if (!msgRes.ok) {
         errorCount++;
@@ -406,7 +440,8 @@ export async function fetchBookingOrdersFromGmail(
       if (parsedResult.isBookingRequest) {
         const detectedPlatform: BookingSource = parsedResult.platform || 'Direct Email';
         const externalBookingLink = extractPlatformBookingLink(htmlText, plainText, detectedPlatform);
-        const gmailDirectUrl = `https://mail.google.com/mail/u/0/#inbox/${msg.id}`;
+        // "#all" works for any message (inbox or archived), unlike "#inbox".
+        const gmailDirectUrl = `https://mail.google.com/mail/u/0/#all/${msg.id}`;
 
         const rawDate = parsedResult.requestedDate || '';
         const isDateValid = isRealIsoDate(rawDate);
@@ -430,7 +465,7 @@ export async function fetchBookingOrdersFromGmail(
           confidence: (parsedResult.confidence as any) || 'medium',
           gmailMessageUrl: gmailDirectUrl,
           externalBookingUrl: externalBookingLink,
-          receivedAt: new Date(dateHeader).toISOString(),
+          receivedAt: safeIsoDate(dateHeader),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -438,9 +473,12 @@ export async function fetchBookingOrdersFromGmail(
         newOrders.push(order);
         existingMessageIds.add(msg.id);
       } else {
+        rejectedMessageIds.add(msg.id);
         rejectedCount++;
       }
     } catch (e) {
+      // An expired token affects every remaining message: stop and surface it.
+      if (e instanceof GmailAuthError) throw e;
       console.warn(`Error processing Gmail message ${msg.id}:`, e);
       errorCount++;
     }
