@@ -16,7 +16,8 @@ import {
   unblockGuideDate,
   blockGuideDateRange,
   unblockGuideDateRange,
-  getAccessToken
+  getAccessToken,
+  connectGmail
 } from './lib/firebase';
 import { fetchBookingOrdersFromGmail } from './lib/gmail';
 import { Tour, Order, BusyDateMap, OrderStatus } from './types';
@@ -365,6 +366,18 @@ export default function App() {
     }
   }, [user, accessToken, existingMessageIds, showToast]);
 
+  const handleConnectGmail = async () => {
+    try {
+      const token = await connectGmail();
+      setAccessToken(token);
+      showToast('Gmail connected. You can now scan booking inquiries.', 'success');
+      await executeGmailSync(true);
+    } catch (err: any) {
+      console.error('Gmail connection error:', err);
+      showToast(err?.message || 'Could not connect Gmail. Check Google permissions and try again.', 'error');
+    }
+  };
+
   // Periodic email sync (every 3 minutes while app is open)
   useEffect(() => {
     if (!user || !accessToken) return;
@@ -460,6 +473,7 @@ export default function App() {
         newOrdersCount={newOrdersCount}
         busyDaysCount={busyDaysCount}
         onSyncGmail={() => executeGmailSync(true)}
+        onConnectGmail={handleConnectGmail}
         isSyncingGmail={isSyncingGmail}
         hasGmailAccess={Boolean(accessToken)}
       />
