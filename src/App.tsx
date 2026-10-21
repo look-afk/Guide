@@ -17,9 +17,10 @@ import {
   blockGuideDateRange,
   unblockGuideDateRange,
   getAccessToken,
+  clearAccessToken,
   connectGmail
 } from './lib/firebase';
-import { fetchBookingOrdersFromGmail } from './lib/gmail';
+import { fetchBookingOrdersFromGmail, GmailAuthError } from './lib/gmail';
 import { Tour, Order, BusyDateMap, OrderStatus } from './types';
 import { Header, ActiveTab } from './components/Header';
 import { CalendarTab } from './components/CalendarTab';
@@ -60,11 +61,36 @@ export default function App() {
   // Ref to prevent overlapping syncs
   const isSyncingRef = useRef(false);
 
+  // Keep the toast timer in a ref so an older timer cannot hide a newer toast.
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Toast Notification
   const showToast = useCallback((text: string, type: 'success' | 'info' | 'error' = 'success') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastMessage({ text, type });
-    setTimeout(() => setToastMessage(null), 4500);
+    toastTimerRef.current = setTimeout(() => setToastMessage(null), 4500);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
+  const handleSignIn = useCallback(async () => {
+    try {
+      await signInGuide();
+    } catch (err: any) {
+      const code = err?.code as string | undefined;
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+      showToast(
+        code === 'auth/popup-blocked'
+          ? 'Your browser blocked the sign-in popup. Allow popups for this site and try again.'
+          : err?.message || 'Sign-in failed. Please try again.',
+        'error'
+      );
+    }
+  }, [showToast]);
 
   // Auth Listener
   useEffect(() => {
@@ -90,24 +116,27 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
 
+    const onLoadError = () =>
+      showToast('Could not load your data. Check your connection and permissions.', 'error');
+
     const unsubTours = subscribeToGuideTours(user.uid, (remoteTours) => {
       setTours(remoteTours);
-    });
+    }, onLoadError);
 
     const unsubOrders = subscribeToGuideOrders(user.uid, (remoteOrders) => {
       setOrders(remoteOrders);
-    });
+    }, onLoadError);
 
     const unsubBusyDates = subscribeToGuideBusyDates(user.uid, (remoteDates) => {
       setBusyDates(remoteDates);
-    });
+    }, onLoadError);
 
     return () => {
       unsubTours();
       unsubOrders();
       unsubBusyDates();
     };
-  }, [user]);
+  }, [user, showToast]);
 
   // Derived counts
   const newOrdersCount = useMemo(() => {
@@ -315,49 +344,53 @@ export default function App() {
     if (!user) return;
     if (isSyncingRef.current) return;
 
-    const token = accessToken || (await getAccessToken());
+    let token = accessToken || (await getAccessToken());
     if (!token) {
-      if (isManualTrigger) {
-        showToast('Please sign in with Google to allow Gmail scanning.', 'info');
-        try {
-          await signInGuide();
-        } catch {
-          return;
-        }
+      if (!isManualTrigger) return;
+      showToast('Please sign in with Google to allow Gmail scanning.', 'info');
+      try {
+        // Use the fresh sign-in token and continue without requiring a second click.
+        const result = await signInGuide();
+        token = result?.accessToken || null;
+      } catch {
+        return;
       }
-      return;
+      if (!token) return;
+      setAccessToken(token);
     }
-
-    const currentToken = accessToken || (await getAccessToken());
-    if (!currentToken) return;
 
     try {
       isSyncingRef.current = true;
       setIsSyncingGmail(true);
 
-      const result = await fetchBookingOrdersFromGmail(currentToken, user.uid, existingMessageIds);
+      const result = await fetchBookingOrdersFromGmail(token, user.uid, existingMessageIds);
 
-      // Save extracted genuine orders into Firestore
+      // Save extracted genuine orders into Firestore.
       for (const order of result.newOrders) {
         await saveGuideOrder(user.uid, order);
       }
 
       setLastSyncTime(new Date());
 
-      const report = `Scanned ${result.scannedCount} emails · Found ${result.newOrders.length} new booking inquiries · ${result.duplicateCount} already saved · ${result.rejectedCount} non-booking messages filtered.`;
+      const report = \`Scanned \${result.scannedCount} emails · Found \${result.newOrders.length} new booking inquiries · \${result.duplicateCount} already saved · \${result.rejectedCount} non-booking messages filtered.\`;
       setSyncReport(report);
 
       if (isManualTrigger) {
         showToast(
           result.newOrders.length > 0
-            ? `Synced ${result.newOrders.length} new booking inquiries from Gmail!`
+            ? \`Synced \${result.newOrders.length} new booking inquiries from Gmail!\`
             : 'Gmail scan complete. No new booking inquiries found.',
           'info'
         );
       }
     } catch (err: any) {
       console.error('Gmail sync error:', err);
-      if (isManualTrigger) {
+      if (err instanceof GmailAuthError) {
+        // Clear expired tokens so the user can reconnect Gmail.
+        clearAccessToken();
+        setAccessToken(null);
+        showToast(err.message, 'error');
+      } else if (isManualTrigger) {
         showToast(err.message || 'Failed to scan Gmail inbox.', 'error');
       }
     } finally {
@@ -365,19 +398,6 @@ export default function App() {
       isSyncingRef.current = false;
     }
   }, [user, accessToken, existingMessageIds, showToast]);
-
-  const handleConnectGmail = async () => {
-    try {
-      const token = await connectGmail();
-      setAccessToken(token);
-      showToast('Gmail connected. You can now scan booking inquiries.', 'success');
-      await executeGmailSync(true);
-    } catch (err: any) {
-      console.error('Gmail connection error:', err);
-      showToast(err?.message || 'Could not connect Gmail. Check Google permissions and try again.', 'error');
-    }
-  };
-
   // Periodic email sync (every 3 minutes while app is open)
   useEffect(() => {
     if (!user || !accessToken) return;
@@ -427,7 +447,7 @@ export default function App() {
 
           <div className="pt-2">
             <button
-              onClick={() => signInGuide()}
+              onClick={handleSignIn}
               className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm rounded-xl transition-all shadow-md hover:shadow-lg"
             >
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -548,7 +568,7 @@ export default function App() {
             hasGmailAccess={Boolean(accessToken)}
             userEmail={user.email}
             lastSyncTime={lastSyncTime}
-            onOpenConnectGmail={() => signInGuide()}
+            onOpenConnectGmail={handleConnectGmail}
             onMarkReviewed={handleMarkReviewed}
             onDeclineOrder={handleDeclineOrder}
             onConfirmToCalendar={(order) => {
