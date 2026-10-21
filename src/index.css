@@ -253,3 +253,131 @@ main button[class*="bg-emerald-400"] {
     border-radius: 10px !important;
   }
 }
+
+
+/* iOS Calendar-inspired finish: restrained system typography, charcoal surfaces, Apple blue selection */
+:root {
+  --ios-blue: #0a84ff;
+  --ios-surface: rgba(35, 35, 38, 0.88);
+  --ios-divider: rgba(255, 255, 255, 0.09);
+  --ios-secondary: #98989f;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+  letter-spacing: -0.012em;
+  background:
+    radial-gradient(ellipse at 50% -12%, rgba(10,132,255,.12), transparent 36rem),
+    #101012 !important;
+  color: #f5f5f7;
+}
+header.sticky {
+  background: rgba(24,24,27,.82) !important;
+  border-bottom: 1px solid rgba(255,255,255,.08) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.025) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+}
+header.sticky > div { min-height: 68px; }
+main > div > div,
+main [class*="bg-[#111827]"] {
+  background: rgba(30,30,32,.82) !important;
+  border: 1px solid rgba(255,255,255,.085) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 12px 36px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.035) !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+}
+main h2 {
+  letter-spacing: -.04em;
+  font-weight: 650 !important;
+}
+main [class*="grid-cols-7"] > div:not([role="button"]) {
+  color: #98989f !important;
+  font-size: 10px !important;
+  letter-spacing: .075em !important;
+  font-weight: 650 !important;
+}
+main [role="button"][class*="min-h-[105px]"],
+main [role="button"][class*="min-h-[120px]"] {
+  min-height: 112px !important;
+  padding: 10px !important;
+  border-radius: 15px !important;
+  border: 1px solid rgba(255,255,255,.065) !important;
+  background: rgba(255,255,255,.025) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1;
+}
+main [role="button"][class*="min-h-[105px]"]:hover,
+main [role="button"][class*="min-h-[120px]"]:hover {
+  background: rgba(255,255,255,.065) !important;
+  border-color: rgba(255,255,255,.15) !important;
+  transform: none !important;
+}
+main [role="button"][class*="ring-2"] {
+  border: 1px solid rgba(10,132,255,.75) !important;
+  background: rgba(10,132,255,.17) !important;
+  box-shadow: inset 0 0 0 1px rgba(10,132,255,.12) !important;
+}
+main [role="button"][class*="ring-2"] > :first-child {
+  color: #fff !important;
+}
+main [role="button"][class*="min-h-[105px]"] [class*="text-white"],
+main [role="button"][class*="min-h-[120px]"] [class*="text-white"] {
+  font-weight: 600;
+}
+main [role="button"][class*="border-emerald-500/40"] {
+  background: rgba(48,209,88,.09) !important;
+  border-color: rgba(48,209,88,.26) !important;
+}
+main [role="button"][class*="border-amber-500/40"] {
+  background: rgba(255,159,10,.09) !important;
+  border-color: rgba(255,159,10,.24) !important;
+}
+main [role="button"] [class*="bg-emerald-500/15"] {
+  background: rgba(48,209,88,.13) !important;
+  border: 1px solid rgba(48,209,88,.15) !important;
+  color: #6ee787 !important;
+  border-radius: 6px !important;
+}
+main [role="button"] [class*="bg-amber-500/15"] {
+  background: rgba(255,159,10,.13) !important;
+  border: 1px solid rgba(255,159,10,.15) !important;
+  color: #ffbd59 !important;
+  border-radius: 6px !important;
+}
+main button[class*="bg-emerald-400"] {
+  background: var(--ios-blue) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 3px 12px rgba(10,132,255,.22) !important;
+}
+main button[class*="bg-emerald-400"]:hover {
+  background: #2994ff !important;
+}
+main button[class*="bg-slate-800"],
+main button[class*="bg-slate-900"] {
+  border-color: rgba(255,255,255,.085) !important;
+  border-radius: 11px !important;
+}
+main button:focus-visible,
+main [role="button"]:focus-visible {
+  outline: 2px solid var(--ios-blue) !important;
+  outline-offset: 2px;
+}
+input, textarea, select {
+  border-radius: 12px;
+}
+@media (max-width: 640px) {
+  header.sticky > div { min-height: 60px; }
+  main { padding: 14px 12px 24px !important; }
+  main > div > div { border-radius: 18px !important; }
+  main [role="button"][class*="min-h-[105px]"],
+  main [role="button"][class*="min-h-[120px]"] {
+    min-height: 72px !important;
+    padding: 5px !important;
+    border-radius: 10px !important;
+  }
+}
