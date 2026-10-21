@@ -184,7 +184,7 @@ export const CalendarTab: React.FC<CalendarTabProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 compact-calendar">
       
       {/* Calendar Top Control Header */}
       <div className="bg-[#111827] border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -192,7 +192,7 @@ export const CalendarTab: React.FC<CalendarTabProps> = ({
         {/* Navigation: Month & Year */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+            <h2 className="text-lg sm:text-xl font-semibold text-white tracking-tight">
               {monthName}
             </h2>
             <span className="text-lg sm:text-xl font-mono text-slate-400 font-normal ml-1">
@@ -251,20 +251,20 @@ export const CalendarTab: React.FC<CalendarTabProps> = ({
       </div>
 
       {/* Main Layout: 7-Column Calendar Grid + Selected Date Inspector */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
         
         {/* Calendar Grid (8 cols on desktop) */}
-        <div className="lg:col-span-8 bg-[#111827] border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+        <div className="lg:col-span-7 bg-[#111827] border border-slate-800 rounded-2xl p-3 shadow-sm space-y-2 compact-month-panel">
           
           {/* Weekday headers */}
-          <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center text-xs font-bold text-slate-400 uppercase tracking-wider py-1">
+          <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-semibold text-slate-400 uppercase tracking-wider py-1">
             {WEEKDAYS.map((d) => (
               <div key={d}>{d}</div>
             ))}
           </div>
 
           {/* Grid cells */}
-          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+          <div className="grid grid-cols-7 gap-1 compact-month-grid">
             {calendarDays.map((cell) => {
               const dayTours = toursByDate[cell.dateStr] || [];
               const hasTours = dayTours.length > 0;
@@ -281,7 +281,7 @@ export const CalendarTab: React.FC<CalendarTabProps> = ({
                   }}
                   role="button"
                   tabIndex={0}
-                  className={`min-h-[105px] sm:min-h-[120px] p-2 rounded-xl border flex flex-col justify-between transition-all cursor-pointer select-none relative ${
+                  className={`h-[43px] min-h-[43px] p-1 rounded-lg border flex flex-col justify-start transition-colors cursor-pointer select-none relative overflow-hidden ${
                     !cell.isCurrentMonth
                       ? 'bg-slate-950/20 border-slate-900/50 opacity-40 hover:opacity-70'
                       : hasTours
@@ -291,18 +291,18 @@ export const CalendarTab: React.FC<CalendarTabProps> = ({
                       : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
                   } ${
                     isSelected
-                      ? 'ring-2 ring-emerald-400 shadow-md ring-offset-2 ring-offset-[#111827]'
+                      ? 'border-[#ff453a] bg-[#ff453a]/10'
                       : isToday
-                      ? 'ring-1 ring-emerald-500/60 border-emerald-500/40'
+                      ? 'border-[#ff453a]/60'
                       : ''
                   }`}
                 >
                   {/* Top: Day Number + Status Flag */}
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-xs sm:text-sm font-mono tabular-nums leading-none ${
+                      className={`inline-flex items-center justify-center min-w-[20px] h-[20px] text-[11px] font-sans tabular-nums leading-none rounded-full ${
                         isToday
-                          ? 'text-emerald-400 font-extrabold underline decoration-emerald-500 decoration-2 underline-offset-4'
+                          ? 'bg-[#ff453a] text-white font-bold'
                           : hasTours
                           ? 'text-emerald-300 font-bold'
                           : isBusyDate
@@ -324,7 +324,7 @@ export const CalendarTab: React.FC<CalendarTabProps> = ({
                   </div>
 
                   {/* Body Content */}
-                  <div className="mt-1 space-y-1 overflow-hidden">
+                  <div className="hidden mt-1 space-y-1 overflow-hidden">
                     {hasTours ? (
                       dayTours.slice(0, 2).map((t) => (
                         <div
@@ -387,7 +387,7 @@ export const CalendarTab: React.FC<CalendarTabProps> = ({
         </div>
 
         {/* Selected Date Inspector Panel (4 cols on desktop) */}
-        <div className="lg:col-span-4 bg-[#111827] border border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="lg:col-span-5 bg-[#111827] border border-slate-800 rounded-2xl p-4 shadow-sm space-y-4">
           
           {/* Inspector Header */}
           <div className="border-b border-slate-800 pb-3 space-y-2">
