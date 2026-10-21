@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { 
   getFirestore, 
+  initializeFirestore,
   doc, 
   collection, 
   setDoc, 
@@ -27,9 +28,18 @@ import { Tour, Order, BusyDateRecord, BusyDateMap, GuideProfile, OrderStatus } f
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Initialize Firestore with specific databaseId
+// Initialize Firestore with specific databaseId.
+// Firestore rejects undefined field values by default, and this app
+// builds records with optional fields. ignoreUndefinedProperties allows those saves.
 const firestoreDbId = (firebaseConfig as any).firestoreDatabaseId || 'ai-studio-9fbbd071-edf5-4f50-a0e3-73d8813d5494';
-export const db = getFirestore(app, firestoreDbId);
+let firestoreInstance: ReturnType<typeof getFirestore>;
+try {
+  firestoreInstance = initializeFirestore(app, { ignoreUndefinedProperties: true }, firestoreDbId);
+} catch {
+  // Already initialized (e.g. hot reload) – reuse the existing instance.
+  firestoreInstance = getFirestore(app, firestoreDbId);
+}
+export const db = firestoreInstance;
 
 // Initialize Auth
 export const auth = getAuth(app);
@@ -41,7 +51,6 @@ googleProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
 
 // In-memory token cache for Google Workspace APIs
 let cachedAccessToken: string | null = null;
-let isSigningIn = false;
 
 export enum OperationType {
   CREATE = 'create',
@@ -64,8 +73,8 @@ export interface FirestoreErrorInfo {
   };
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
+function buildErrorInfo(error: unknown, operationType: OperationType, path: string | null): FirestoreErrorInfo {
+  return {
     error: error instanceof Error ? error.message : String(error),
     operationType,
     path,
@@ -76,8 +85,20 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
       isAnonymous: auth.currentUser?.isAnonymous,
     }
   };
+}
+
+// For write/delete operations: log and throw so callers can show a toast.
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+  const errInfo = buildErrorInfo(error, operationType, path);
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
+}
+
+// Inside onSnapshot error callbacks, throwing creates an uncaught exception.
+// Subscriptions log and notify instead.
+function reportSnapshotError(error: unknown, operationType: OperationType, path: string, onError?: (err: Error) => void) {
+  console.error('Firestore Error: ', JSON.stringify(buildErrorInfo(error, operationType, path)));
+  if (onError) onError(error instanceof Error ? error : new Error(String(error)));
 }
 
 // Auth Listeners & Actions
@@ -97,7 +118,6 @@ export const initAuth = (
 
 export const signInGuide = async (): Promise<{ user: User; accessToken: string | null } | null> => {
   try {
-    isSigningIn = true;
     const result = await signInWithPopup(auth, googleProvider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     cachedAccessToken = credential?.accessToken || null;
@@ -109,8 +129,6 @@ export const signInGuide = async (): Promise<{ user: User; accessToken: string |
   } catch (error) {
     console.error('Sign-in error:', error);
     throw error;
-  } finally {
-    isSigningIn = false;
   }
 };
 
@@ -137,6 +155,10 @@ export const getAccessToken = async (): Promise<string | null> => {
   return cachedAccessToken;
 };
 
+export const clearAccessToken = () => {
+  cachedAccessToken = null;
+};
+
 export const signOutGuide = async () => {
   await signOut(auth);
   cachedAccessToken = null;
@@ -159,7 +181,6 @@ export const ensureGuideProfile = async (user: User): Promise<GuideProfile> => {
     return profile;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `guides/${user.uid}`);
-    return profile;
   }
 };
 
@@ -179,10 +200,7 @@ export const subscribeToGuideTours = (
       tours.sort((a, b) => a.date.localeCompare(b.date));
       onUpdate(tours);
     },
-    (error) => {
-      handleFirestoreError(error, OperationType.LIST, `guides/${guideId}/tours`);
-      if (onError) onError(error);
-    }
+    (error) => reportSnapshotError(error, OperationType.LIST, `guides/${guideId}/tours`, onError)
   );
 };
 
@@ -231,7 +249,7 @@ export const saveGuideTour = async (guideId: string, tour: Tour, previousDate?: 
       guideId,
       date: tour.date,
       isBusy: true,
-      isManualBlock: Boolean(existingDateData?.isManualBlock), // Preserve manual block flag if it was also manually blocked
+      isManualBlock: Boolean(existingDateData?.isManualBlock),
       manualBlockReason: existingDateData?.manualBlockReason,
       reason: `${tour.destination} (${tour.clientName})`,
       tourId: tour.id,
@@ -272,20 +290,21 @@ export const deleteGuideTour = async (guideId: string, tour: Tour) => {
         date: tour.date,
         isBusy: true,
         reason: `${nextTour.destination} (${nextTour.clientName})`,
-        tourId: nextTour.id,
+        tourId: remaining[0].id,
         isManualBlock: Boolean(dateData?.isManualBlock),
         updatedAt: new Date().toISOString()
       }, { merge: true });
     } else if (dateData?.isManualBlock) {
-      // No remaining tours, BUT date was manually blocked by the guide:
-      // PRESERVE the manual block! Do not delete the busy date record!
+      // No remaining tours, but date was manually blocked: preserve the manual block and reason.
+      const manualReason = dateData.manualBlockReason || 'Manually Blocked Date';
       await setDoc(dateRef, {
         id: tour.date,
         guideId,
         date: tour.date,
         isBusy: true,
         isManualBlock: true,
-        reason: dateData.reason || 'Manually Blocked Date',
+        manualBlockReason: manualReason,
+        reason: manualReason,
         tourId: null,
         updatedAt: new Date().toISOString()
       });
@@ -324,10 +343,7 @@ export const subscribeToGuideOrders = (
       orders.sort((a, b) => new Date(b.receivedAt || b.createdAt).getTime() - new Date(a.receivedAt || a.createdAt).getTime());
       onUpdate(orders);
     },
-    (error) => {
-      handleFirestoreError(error, OperationType.LIST, `guides/${guideId}/orders`);
-      if (onError) onError(error);
-    }
+    (error) => reportSnapshotError(error, OperationType.LIST, `guides/${guideId}/orders`, onError)
   );
 };
 
@@ -405,10 +421,7 @@ export const subscribeToGuideBusyDates = (
       });
       onUpdate(dateMap);
     },
-    (error) => {
-      handleFirestoreError(error, OperationType.LIST, `guides/${guideId}/busyDates`);
-      if (onError) onError(error);
-    }
+    (error) => reportSnapshotError(error, OperationType.LIST, `guides/${guideId}/busyDates`, onError)
   );
 };
 
@@ -478,8 +491,7 @@ export const blockGuideDateRange = async (
   reason: string
 ): Promise<number> => {
   const dates = getDatesInRange(startDate, endDate);
-  if (dates.length === 0) throw new Error('Enter a valid date range using real YYYY-MM-DD dates.');
-  if (dates.length > 366) throw new Error('A date range cannot exceed 366 days.');
+  if (dates.length === 0) throw new Error('Enter a valid date range (max 366 days) using real YYYY-MM-DD dates.');
 
   try {
     const batch = writeBatch(db);
@@ -505,7 +517,6 @@ export const blockGuideDateRange = async (
     return dates.length;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `guides/${guideId}/busyDates/batch`);
-    return 0;
   }
 };
 
@@ -516,8 +527,7 @@ export const unblockGuideDateRange = async (
   endDate: string
 ): Promise<{ unblockedCount: number; protectedTourDates: string[] }> => {
   const dates = getDatesInRange(startDate, endDate);
-  if (dates.length === 0) throw new Error('Enter a valid date range using real YYYY-MM-DD dates.');
-  if (dates.length > 366) throw new Error('A date range cannot exceed 366 days.');
+  if (dates.length === 0) throw new Error('Enter a valid date range (max 366 days) using real YYYY-MM-DD dates.');
 
   try {
     // Find all tours in the user's collection to check protected dates
@@ -550,6 +560,5 @@ export const unblockGuideDateRange = async (
     return { unblockedCount, protectedTourDates };
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `guides/${guideId}/busyDates/batch`);
-    return { unblockedCount: 0, protectedTourDates: [] };
   }
 };
