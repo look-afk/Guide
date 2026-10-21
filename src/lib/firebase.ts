@@ -114,6 +114,25 @@ export const signInGuide = async (): Promise<{ user: User; accessToken: string |
   }
 };
 
+export const connectGmail = async (): Promise<string> => {
+  const provider = new GoogleAuthProvider();
+  provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+  provider.addScope('https://www.googleapis.com/auth/calendar.events');
+  provider.setCustomParameters({ prompt: 'consent select_account' });
+
+  const result = await signInWithPopup(auth, provider);
+  const credential = GoogleAuthProvider.credentialFromResult(result);
+  const token = credential?.accessToken;
+
+  if (!token) {
+    throw new Error('Google did not return Gmail access. Please try again and approve the requested permissions.');
+  }
+
+  cachedAccessToken = token;
+  await ensureGuideProfile(result.user);
+  return token;
+};
+
 export const getAccessToken = async (): Promise<string | null> => {
   return cachedAccessToken;
 };
