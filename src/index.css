@@ -1,1 +1,176 @@
 @import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --glass-bg: rgba(17, 19, 24, 0.68);
+  --glass-border: rgba(255, 255, 255, 0.085);
+  --glass-highlight: rgba(255, 255, 255, 0.045);
+  --accent: #b8a4ff;
+}
+
+html {
+  min-width: 320px;
+  background: #08090c;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(111, 80, 190, 0.13), transparent 36rem),
+    radial-gradient(ellipse at 92% 18%, rgba(60, 100, 125, 0.09), transparent 32rem),
+    #08090c;
+  color: #f4f3f8;
+}
+
+button, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+button:focus-visible, [role="button"]:focus-visible {
+  outline: 2px solid rgba(184, 164, 255, 0.9);
+  outline-offset: 3px;
+}
+
+/* Glass navigation */
+header.sticky {
+  background: rgba(10, 11, 15, 0.72) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.09) !important;
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+header.sticky > div {
+  min-height: 72px;
+}
+
+/* Panels: dark translucent glass, subtle edge light */
+main > div > div,
+main [class*="bg-[#111827]"],
+main [class*="bg-[#0B0F17]"] {
+  background: var(--glass-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.18), inset 0 1px 0 var(--glass-highlight);
+  backdrop-filter: blur(20px) saturate(135%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+}
+
+/* Calendar month controls */
+main [class*="bg-slate-900"][class*="rounded-lg"],
+main [class*="bg-slate-800"][class*="rounded-lg"] {
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+main button[class*="bg-emerald-400"] {
+  background: linear-gradient(135deg, #c8b8ff, #9b83f4) !important;
+  color: #100d19 !important;
+  box-shadow: 0 5px 18px rgba(155, 131, 244, 0.2);
+}
+
+main button[class*="bg-emerald-400"]:hover {
+  background: linear-gradient(135deg, #d9ceff, #b19cff) !important;
+  transform: translateY(-1px);
+}
+
+main button[class*="bg-slate-800"],
+main button[class*="bg-slate-900"] {
+  background: rgba(255, 255, 255, 0.045) !important;
+}
+
+main button[class*="bg-slate-800"]:hover,
+main button[class*="bg-slate-900"]:hover {
+  background: rgba(255, 255, 255, 0.085) !important;
+}
+
+/* Calendar cells: consistent height, softer corners and hover feedback */
+main [role="button"][class*="min-h-\[105px\]"],
+main [role="button"][class*="min-h-\[120px\]"] {
+  min-height: 126px;
+  padding: 11px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.025) !important;
+  border-color: rgba(255, 255, 255, 0.075) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+main [role="button"][class*="min-h-\[105px\]"]:hover,
+main [role="button"][class*="min-h-\[120px\]"]:hover {
+  background: rgba(255, 255, 255, 0.055) !important;
+  border-color: rgba(184, 164, 255, 0.42) !important;
+  transform: translateY(-1px);
+}
+
+main [role="button"][class*="ring-2"] {
+  border-color: rgba(184, 164, 255, 0.7) !important;
+  box-shadow: 0 0 0 1px rgba(184, 164, 255, 0.18), 0 8px 24px rgba(0, 0, 0, 0.22) !important;
+  background: rgba(184, 164, 255, 0.085) !important;
+}
+
+main [role="button"][class*="border-emerald-500/40"] {
+  background: rgba(110, 231, 183, 0.055) !important;
+  border-color: rgba(110, 231, 183, 0.2) !important;
+}
+
+main [role="button"][class*="border-amber-500/40"] {
+  background: rgba(251, 191, 36, 0.045) !important;
+  border-color: rgba(251, 191, 36, 0.2) !important;
+}
+
+/* Appointment chips */
+main [role="button"] [class*="bg-emerald-500/15"] {
+  background: rgba(110, 231, 183, 0.1) !important;
+  border-color: rgba(110, 231, 183, 0.18) !important;
+  border-radius: 7px;
+}
+
+main [role="button"] [class*="bg-amber-500/15"] {
+  background: rgba(251, 191, 36, 0.085) !important;
+  border-color: rgba(251, 191, 36, 0.18) !important;
+  border-radius: 7px;
+}
+
+main [class*="border-t"][class*="border-slate-800"] {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Inputs and dialogs */
+input, textarea, select {
+  color-scheme: dark;
+}
+
+::selection {
+  color: #100d19;
+  background: rgba(184, 164, 255, 0.8);
+}
+
+@media (max-width: 640px) {
+  header.sticky > div {
+    min-height: 64px;
+    gap: 8px;
+  }
+
+  main [role="button"][class*="min-h-\[105px\]"],
+  main [role="button"][class*="min-h-\[120px\]"] {
+    min-height: 76px;
+    padding: 6px;
+    border-radius: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
