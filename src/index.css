@@ -253,3 +253,466 @@ main button[class*="bg-emerald-400"] {
     border-radius: 10px !important;
   }
 }
+
+
+/* iOS Calendar-inspired finish: restrained system typography, charcoal surfaces, Apple blue selection */
+:root {
+  --ios-blue: #0a84ff;
+  --ios-surface: rgba(35, 35, 38, 0.88);
+  --ios-divider: rgba(255, 255, 255, 0.09);
+  --ios-secondary: #98989f;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+  letter-spacing: -0.012em;
+  background:
+    radial-gradient(ellipse at 50% -12%, rgba(10,132,255,.12), transparent 36rem),
+    #101012 !important;
+  color: #f5f5f7;
+}
+header.sticky {
+  background: rgba(24,24,27,.82) !important;
+  border-bottom: 1px solid rgba(255,255,255,.08) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.025) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+}
+header.sticky > div { min-height: 68px; }
+main > div > div,
+main [class*="bg-[#111827]"] {
+  background: rgba(30,30,32,.82) !important;
+  border: 1px solid rgba(255,255,255,.085) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 12px 36px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.035) !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+}
+main h2 {
+  letter-spacing: -.04em;
+  font-weight: 650 !important;
+}
+main [class*="grid-cols-7"] > div:not([role="button"]) {
+  color: #98989f !important;
+  font-size: 10px !important;
+  letter-spacing: .075em !important;
+  font-weight: 650 !important;
+}
+main [role="button"][class*="min-h-[105px]"],
+main [role="button"][class*="min-h-[120px]"] {
+  min-height: 112px !important;
+  padding: 10px !important;
+  border-radius: 15px !important;
+  border: 1px solid rgba(255,255,255,.065) !important;
+  background: rgba(255,255,255,.025) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1;
+}
+main [role="button"][class*="min-h-[105px]"]:hover,
+main [role="button"][class*="min-h-[120px]"]:hover {
+  background: rgba(255,255,255,.065) !important;
+  border-color: rgba(255,255,255,.15) !important;
+  transform: none !important;
+}
+main [role="button"][class*="ring-2"] {
+  border: 1px solid rgba(10,132,255,.75) !important;
+  background: rgba(10,132,255,.17) !important;
+  box-shadow: inset 0 0 0 1px rgba(10,132,255,.12) !important;
+}
+main [role="button"][class*="ring-2"] > :first-child {
+  color: #fff !important;
+}
+main [role="button"][class*="min-h-[105px]"] [class*="text-white"],
+main [role="button"][class*="min-h-[120px]"] [class*="text-white"] {
+  font-weight: 600;
+}
+main [role="button"][class*="border-emerald-500/40"] {
+  background: rgba(48,209,88,.09) !important;
+  border-color: rgba(48,209,88,.26) !important;
+}
+main [role="button"][class*="border-amber-500/40"] {
+  background: rgba(255,159,10,.09) !important;
+  border-color: rgba(255,159,10,.24) !important;
+}
+main [role="button"] [class*="bg-emerald-500/15"] {
+  background: rgba(48,209,88,.13) !important;
+  border: 1px solid rgba(48,209,88,.15) !important;
+  color: #6ee787 !important;
+  border-radius: 6px !important;
+}
+main [role="button"] [class*="bg-amber-500/15"] {
+  background: rgba(255,159,10,.13) !important;
+  border: 1px solid rgba(255,159,10,.15) !important;
+  color: #ffbd59 !important;
+  border-radius: 6px !important;
+}
+main button[class*="bg-emerald-400"] {
+  background: var(--ios-blue) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 3px 12px rgba(10,132,255,.22) !important;
+}
+main button[class*="bg-emerald-400"]:hover {
+  background: #2994ff !important;
+}
+main button[class*="bg-slate-800"],
+main button[class*="bg-slate-900"] {
+  border-color: rgba(255,255,255,.085) !important;
+  border-radius: 11px !important;
+}
+main button:focus-visible,
+main [role="button"]:focus-visible {
+  outline: 2px solid var(--ios-blue) !important;
+  outline-offset: 2px;
+}
+input, textarea, select {
+  border-radius: 12px;
+}
+@media (max-width: 640px) {
+  header.sticky > div { min-height: 60px; }
+  main { padding: 14px 12px 24px !important; }
+  main > div > div { border-radius: 18px !important; }
+  main [role="button"][class*="min-h-[105px]"],
+  main [role="button"][class*="min-h-[120px]"] {
+    min-height: 72px !important;
+    padding: 5px !important;
+    border-radius: 10px !important;
+  }
+}
+
+
+/* Premium editorial wall-calendar: warm ivory paper, fine serif type, architectural arches */
+:root {
+  color-scheme: light;
+  --paper: #f5f0e7;
+  --paper-deep: #e9e0d3;
+  --ink: #302b26;
+  --muted-ink: #8d8174;
+  --hairline: rgba(74, 60, 46, .19);
+  --calendar-accent: #8b7159;
+}
+html, body {
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+}
+body {
+  font-family: "Bodoni 72", "Didot", "Baskerville", "Times New Roman", serif !important;
+  letter-spacing: .005em !important;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.9), transparent 40rem),
+    linear-gradient(180deg, #f8f4ed, #eee6da) !important;
+  background-attachment: fixed !important;
+}
+header.sticky {
+  background: rgba(245,240,231,.88) !important;
+  border-bottom: 1px solid var(--hairline) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(22px) saturate(110%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(110%) !important;
+}
+header.sticky, header.sticky * {
+  color: var(--ink);
+}
+main {
+  max-width: 1320px !important;
+  padding-top: 30px !important;
+}
+main > div > div,
+main [class*="bg-[#111827]"],
+main [class*="bg-[#0B0F17]"] {
+  background: rgba(255,252,246,.78) !important;
+  border: 1px solid rgba(92,73,53,.16) !important;
+  border-radius: 3px !important;
+  box-shadow: 0 18px 55px rgba(70,53,35,.07), inset 0 1px 0 rgba(255,255,255,.9) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+main h1, main h2, main h3 {
+  font-family: "Bodoni 72", "Didot", "Baskerville", "Times New Roman", serif !important;
+  color: #332b24 !important;
+  font-weight: 400 !important;
+  letter-spacing: -.035em !important;
+}
+main h1, main h2 { font-size: clamp(1.7rem, 3vw, 2.6rem) !important; }
+main p, main label, main span, main button, main input, main textarea, main select {
+  color: inherit;
+}
+main [class*="grid-cols-7"] > div:not([role="button"]) {
+  color: #958777 !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 10px !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase;
+  font-weight: 600 !important;
+}
+main [role="button"][class*="min-h-[105px]"],
+main [role="button"][class*="min-h-[120px]"] {
+  min-height: 116px !important;
+  padding: 10px !important;
+  border-radius: 2px !important;
+  border: 1px solid rgba(92,73,53,.15) !important;
+  background: rgba(255,253,248,.55) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: background .18s ease, border-color .18s ease !important;
+}
+main [role="button"][class*="min-h-[105px]"]:hover,
+main [role="button"][class*="min-h-[120px]"]:hover {
+  background: #fffdf8 !important;
+  border-color: rgba(139,113,89,.55) !important;
+  transform: none !important;
+}
+main [role="button"][class*="ring-2"] {
+  background: #e9dfd1 !important;
+  border: 1px solid #8b7159 !important;
+  box-shadow: inset 0 0 0 1px rgba(139,113,89,.12) !important;
+}
+main [role="button"][class*="border-emerald-500/40"] {
+  background: rgba(94,126,91,.09) !important;
+  border-color: rgba(94,126,91,.28) !important;
+}
+main [role="button"][class*="border-amber-500/40"] {
+  background: rgba(170,124,63,.09) !important;
+  border-color: rgba(170,124,63,.28) !important;
+}
+main [role="button"] [class*="bg-emerald-500/15"] {
+  background: rgba(94,126,91,.12) !important;
+  border: 1px solid rgba(94,126,91,.2) !important;
+  color: #4d6b49 !important;
+  border-radius: 1px !important;
+}
+main [role="button"] [class*="bg-amber-500/15"] {
+  background: rgba(170,124,63,.12) !important;
+  border: 1px solid rgba(170,124,63,.2) !important;
+  color: #8b622e !important;
+  border-radius: 1px !important;
+}
+main button[class*="bg-emerald-400"] {
+  background: #8b7159 !important;
+  color: #fffaf3 !important;
+  border: 1px solid #8b7159 !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+  font-family: Arial, sans-serif !important;
+  letter-spacing: .025em !important;
+}
+main button[class*="bg-emerald-400"]:hover {
+  background: #725a45 !important;
+}
+main button[class*="bg-slate-800"],
+main button[class*="bg-slate-900"] {
+  background: rgba(139,113,89,.055) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 2px !important;
+}
+main button, main [role="button"] { -webkit-tap-highlight-color: transparent; }
+main button:focus-visible, main [role="button"]:focus-visible {
+  outline: 2px solid #8b7159 !important;
+  outline-offset: 2px;
+}
+input, textarea, select {
+  color-scheme: light !important;
+  background: rgba(255,253,248,.8) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 2px !important;
+  color: var(--ink) !important;
+}
+::selection { color: #302b26; background: #d8c8b4; }
+@media (max-width: 640px) {
+  main { padding: 14px 12px 24px !important; }
+  main [role="button"][class*="min-h-[105px]"],
+  main [role="button"][class*="min-h-[120px]"] {
+    min-height: 72px !important;
+    padding: 5px !important;
+  }
+}
+
+
+/* Compact black calendar reference: minimal grid, red month label, no glass cards */
+:root {
+  color-scheme: dark;
+  --mini-calendar-bg: #111113;
+  --mini-calendar-ink: #f4f4f5;
+  --mini-calendar-muted: #85858b;
+  --mini-calendar-line: rgba(255,255,255,.10);
+  --mini-calendar-red: #ff453a;
+}
+html, body {
+  background: #09090b !important;
+  color: var(--mini-calendar-ink) !important;
+}
+body {
+  font-family: Arial, Helvetica, sans-serif !important;
+  letter-spacing: 0 !important;
+  background: #09090b !important;
+}
+header.sticky {
+  background: rgba(12,12,14,.94) !important;
+  border-bottom: 1px solid var(--mini-calendar-line) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+}
+header.sticky, header.sticky * { color: var(--mini-calendar-ink); }
+main { max-width: 1440px !important; padding-top: 20px !important; }
+main > div > div,
+main [class*="bg-[#111827]"],
+main [class*="bg-[#0B0F17]"] {
+  background: var(--mini-calendar-bg) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 36px rgba(0,0,0,.24) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+main h1, main h2, main h3 {
+  color: #f5f5f7 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -.035em !important;
+}
+main [class*="grid-cols-7"] > div:not([role="button"]) {
+  color: var(--mini-calendar-muted) !important;
+  font: 600 10px/1.2 Arial, Helvetica, sans-serif !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+main [role="button"][class*="min-h-[105px]"],
+main [role="button"][class*="min-h-[120px]"] {
+  min-height: 106px !important;
+  padding: 9px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #f5f5f7 !important;
+}
+main [role="button"][class*="min-h-[105px]"]:hover,
+main [role="button"][class*="min-h-[120px]"]:hover {
+  background: rgba(255,255,255,.055) !important;
+  border-color: rgba(255,255,255,.09) !important;
+  transform: none !important;
+}
+main [role="button"][class*="ring-2"] {
+  background: var(--mini-calendar-red) !important;
+  border-color: var(--mini-calendar-red) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: white !important;
+}
+main [role="button"][class*="border-emerald-500/40"] {
+  background: rgba(48,209,88,.07) !important;
+  border-color: rgba(48,209,88,.18) !important;
+}
+main [role="button"][class*="border-amber-500/40"] {
+  background: rgba(255,159,10,.07) !important;
+  border-color: rgba(255,159,10,.18) !important;
+}
+main [role="button"] [class*="bg-emerald-500/15"] {
+  background: rgba(48,209,88,.12) !important;
+  color: #78e895 !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+}
+main [role="button"] [class*="bg-amber-500/15"] {
+  background: rgba(255,159,10,.12) !important;
+  color: #ffc36b !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+}
+main button[class*="bg-emerald-400"] {
+  background: var(--mini-calendar-red) !important;
+  color: white !important;
+  border: 1px solid var(--mini-calendar-red) !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+main button[class*="bg-emerald-400"]:hover { background: #e63830 !important; }
+main button[class*="bg-slate-800"],
+main button[class*="bg-slate-900"] {
+  background: #1b1b1f !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  border-radius: 8px !important;
+  color: #f5f5f7 !important;
+}
+input, textarea, select {
+  color-scheme: dark !important;
+  background: #19191d !important;
+  color: #f5f5f7 !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 8px !important;
+}
+::selection { color: white; background: rgba(255,69,58,.65); }
+@media (max-width: 640px) {
+  main { padding: 12px 10px 22px !important; }
+  main > div > div { border-radius: 13px !important; }
+  main [role="button"][class*="min-h-[105px]"],
+  main [role="button"][class*="min-h-[120px]"] {
+    min-height: 68px !important;
+    padding: 4px !important;
+    border-radius: 8px !important;
+  }
+}
+
+
+/* Compact month-calendar layout matching the requested black reference */
+main > div.space-y-6 { gap: 14px !important; }
+main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 { gap: 14px !important; }
+main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:first-child {
+  padding: 12px !important;
+  border-radius: 14px !important;
+  gap: 8px !important;
+}
+main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:first-child > div.grid.grid-cols-7:last-of-type {
+  gap: 3px !important;
+}
+main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:first-child > div.grid.grid-cols-7:last-of-type > div[role="button"] {
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 5px 6px !important;
+  border-radius: 7px !important;
+  display: block !important;
+  position: relative !important;
+}
+main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:first-child > div.grid.grid-cols-7:last-of-type > div[role="button"] > div:first-child {
+  justify-content: center !important;
+}
+main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:first-child > div.grid.grid-cols-7:last-of-type > div[role="button"] > div:first-child > span:first-child {
+  font: 12px/1 Arial, Helvetica, sans-serif !important;
+}
+main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:first-child > div.grid.grid-cols-7:last-of-type > div[role="button"] > div.mt-1 {
+  display: none !important;
+}
+main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:first-child > div.grid.grid-cols-7:first-child {
+  gap: 3px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  font-size: 9px !important;
+}
+main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:first-child > div.pt-2 {
+  margin-top: 4px !important;
+}
+main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:last-child {
+  border-radius: 14px !important;
+}
+main > div.space-y-6 > div:first-child {
+  padding: 12px 16px !important;
+  border-radius: 14px !important;
+}
+@media (min-width: 1024px) {
+  main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:first-child { grid-column: span 7 / span 7 !important; }
+  main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:last-child { grid-column: span 5 / span 5 !important; }
+}
+@media (max-width: 640px) {
+  main > div.space-y-6 > div.grid.grid-cols-1.lg\\:grid-cols-12 > div:first-child > div.grid.grid-cols-7:last-of-type > div[role="button"] {
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 4px !important;
+  }
+}
