@@ -529,3 +529,133 @@ input, textarea, select {
     padding: 5px !important;
   }
 }
+
+
+/* Compact black calendar reference: minimal grid, red month label, no glass cards */
+:root {
+  color-scheme: dark;
+  --mini-calendar-bg: #111113;
+  --mini-calendar-ink: #f4f4f5;
+  --mini-calendar-muted: #85858b;
+  --mini-calendar-line: rgba(255,255,255,.10);
+  --mini-calendar-red: #ff453a;
+}
+html, body {
+  background: #09090b !important;
+  color: var(--mini-calendar-ink) !important;
+}
+body {
+  font-family: Arial, Helvetica, sans-serif !important;
+  letter-spacing: 0 !important;
+  background: #09090b !important;
+}
+header.sticky {
+  background: rgba(12,12,14,.94) !important;
+  border-bottom: 1px solid var(--mini-calendar-line) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+}
+header.sticky, header.sticky * { color: var(--mini-calendar-ink); }
+main { max-width: 1440px !important; padding-top: 20px !important; }
+main > div > div,
+main [class*="bg-[#111827]"],
+main [class*="bg-[#0B0F17]"] {
+  background: var(--mini-calendar-bg) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 36px rgba(0,0,0,.24) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+main h1, main h2, main h3 {
+  color: #f5f5f7 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -.035em !important;
+}
+main [class*="grid-cols-7"] > div:not([role="button"]) {
+  color: var(--mini-calendar-muted) !important;
+  font: 600 10px/1.2 Arial, Helvetica, sans-serif !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+main [role="button"][class*="min-h-[105px]"],
+main [role="button"][class*="min-h-[120px]"] {
+  min-height: 106px !important;
+  padding: 9px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #f5f5f7 !important;
+}
+main [role="button"][class*="min-h-[105px]"]:hover,
+main [role="button"][class*="min-h-[120px]"]:hover {
+  background: rgba(255,255,255,.055) !important;
+  border-color: rgba(255,255,255,.09) !important;
+  transform: none !important;
+}
+main [role="button"][class*="ring-2"] {
+  background: var(--mini-calendar-red) !important;
+  border-color: var(--mini-calendar-red) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: white !important;
+}
+main [role="button"][class*="border-emerald-500/40"] {
+  background: rgba(48,209,88,.07) !important;
+  border-color: rgba(48,209,88,.18) !important;
+}
+main [role="button"][class*="border-amber-500/40"] {
+  background: rgba(255,159,10,.07) !important;
+  border-color: rgba(255,159,10,.18) !important;
+}
+main [role="button"] [class*="bg-emerald-500/15"] {
+  background: rgba(48,209,88,.12) !important;
+  color: #78e895 !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+}
+main [role="button"] [class*="bg-amber-500/15"] {
+  background: rgba(255,159,10,.12) !important;
+  color: #ffc36b !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+}
+main button[class*="bg-emerald-400"] {
+  background: var(--mini-calendar-red) !important;
+  color: white !important;
+  border: 1px solid var(--mini-calendar-red) !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+main button[class*="bg-emerald-400"]:hover { background: #e63830 !important; }
+main button[class*="bg-slate-800"],
+main button[class*="bg-slate-900"] {
+  background: #1b1b1f !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  border-radius: 8px !important;
+  color: #f5f5f7 !important;
+}
+input, textarea, select {
+  color-scheme: dark !important;
+  background: #19191d !important;
+  color: #f5f5f7 !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 8px !important;
+}
+::selection { color: white; background: rgba(255,69,58,.65); }
+@media (max-width: 640px) {
+  main { padding: 12px 10px 22px !important; }
+  main > div > div { border-radius: 13px !important; }
+  main [role="button"][class*="min-h-[105px]"],
+  main [role="button"][class*="min-h-[120px]"] {
+    min-height: 68px !important;
+    padding: 4px !important;
+    border-radius: 8px !important;
+  }
+}
