@@ -1,25 +1,636 @@
 <!doctype html>
-<html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#070a14" />
-    <link rel="icon" type="image/svg+xml" href="/guide-logo.svg" />
-    <title>Guide — Private Tours</title>
-    <meta name="description" content="GUIDE helps private tour guides manage bookings, availability, and guest requests in one simple workspace." />
-    <meta property="og:site_name" content="GUIDE" />
-    <meta property="og:title" content="GUIDE — Private Tours" />
-    <meta property="og:description" content="Manage tour bookings, availability, and guest requests with GUIDE." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="GUIDE — Private Tours" />
-    <meta name="twitter:description" content="Manage tour bookings, availability, and guest requests with GUIDE." />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-[#0B0F17] text-slate-100 font-['Plus_Jakarta_Sans',sans-serif] antialiased selection:bg-emerald-500/20 selection:text-emerald-300 min-h-screen">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Мои дни</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f0ff;--surf:#ffffff;--ink:#1b1030;--mute:#7a6c96;--line:#e0d4f5;
+--m1:#ff5d73;--m2:#ff9a4d;--m3:#ffd84d;--m4:#6fdc8c;--m5:#4dc9ff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#150c27;--surf:#21153b;--ink:#f6f0ff;--mute:#a597c4;--line:#352656;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#150c27;--surf:#21153b;--ink:#f6f0ff;--mute:#a597c4;--line:#352656;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Onest,system-ui,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--m5);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:30px 20px 80px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+h1{font:800 clamp(44px,9vw,92px)/.95 Unbounded,sans-serif;margin:0;letter-spacing:-.04em}
+h1 small{display:block;font:600 16px Onest,sans-serif;letter-spacing:0;color:var(--mute);margin-bottom:10px}
+.nav{display:flex;gap:8px}
+.ib{width:46px;height:46px;border-radius:50%;border:2px solid var(--ink);background:transparent;font-size:20px;line-height:1}
+.ib:hover{background:var(--ink);color:var(--bg)}
+.main{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:40px;align-items:start}
+@media(max-width:860px){.main{grid-template-columns:1fr;gap:28px}}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.wd{font-size:13px;color:var(--mute);text-align:center}
+.d{aspect-ratio:1/1;border-radius:16px;border:0;background:var(--surf);position:relative;padding:0;min-width:0;transition:transform .12s;color:#1b1030}
+.d:hover{transform:scale(1.07);z-index:2}
+.d b{position:absolute;top:6px;left:8px;font-size:12px;font-weight:600;color:var(--mute)}
+.d i{font-style:normal;font-size:clamp(18px,3.4vw,30px);position:absolute;inset:0;display:grid;place-items:center;padding-top:8px}
+.d u{position:absolute;top:5px;right:6px;width:17px;height:17px;border-radius:50%;background:#1b1030;color:#fff;font:700 11px/17px Onest;text-align:center;text-decoration:none}
+.d.e{visibility:hidden}
+.d.has b{color:rgba(27,16,48,.65)}
+.d.f{opacity:.45}
+.d.tdy b{color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}
+.d.sel{outline:3px solid var(--ink);outline-offset:2px}
+.mc1{background:var(--m1)}.mc2{background:var(--m2)}.mc3{background:var(--m3)}.mc4{background:var(--m4)}.mc5{background:var(--m5)}.mc0{background:#cbbfe6}
+.note{font-size:13px;color:var(--mute);margin-top:14px}
+.ed h2{font:800 28px/1.1 Unbounded,sans-serif;margin:0;letter-spacing:-.03em}
+.ed .sub{color:var(--mute);margin:4px 0 20px}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:12px 16px;border-radius:999px;border:2px solid var(--line);background:var(--surf);font-weight:500;transition:all .15s}
+.pill.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pill.big{font-size:17px;padding:14px 20px}
+.pill s{text-decoration:none;opacity:.5;font-size:16px;padding-left:2px}
+.pill s:hover{opacity:1}
+.lb{display:block;font-weight:600;margin:24px 0 8px}
+.moods{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.moods button{border:0;border-radius:18px;font-size:30px;padding:12px 0;opacity:.35;transition:all .15s;color:#000}
+.moods button:hover{opacity:.8}
+.moods button.on{opacity:1;transform:translateY(-4px);box-shadow:0 4px 0 var(--ink)}
+textarea{width:100%;min-height:130px;resize:vertical;padding:14px 16px;border-radius:18px;border:2px solid var(--line);background:var(--surf);line-height:1.55}
+textarea:focus{border-color:var(--ink);outline:none}
+.add{display:flex;gap:8px}
+.add input{flex:1;min-width:0;padding:11px 16px;border-radius:999px;border:2px solid var(--line);background:var(--surf)}
+.add button{padding:11px 18px;border-radius:999px;border:2px solid var(--ink);background:transparent;font-weight:600}
+.add button:hover{background:var(--ink);color:var(--bg)}
+.st{font-size:13px;color:var(--mute);margin-top:12px;min-height:20px}
+.stats{margin-top:56px;border-top:3px solid var(--ink);padding-top:26px}
+.stats>h2{font:800 32px/1 Unbounded,sans-serif;letter-spacing:-.03em;margin:0 0 22px}
+.tabs{display:flex;gap:8px;margin-bottom:26px}
+.tabs button{padding:8px 16px;border-radius:999px;border:2px solid var(--line);background:transparent;font-weight:500}
+.tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:22px 18px;margin-bottom:40px}
+.kp b{display:block;font:800 clamp(34px,5vw,52px)/1 Unbounded,sans-serif;letter-spacing:-.04em}
+.kp small{color:var(--mute);font-size:14px}
+.blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px 36px}
+.blk h3{font:600 17px/1.2 Unbounded,sans-serif;margin:0 0 4px}
+.blk .s{color:var(--mute);font-size:14px;margin:0 0 14px}
+.row{display:grid;grid-template-columns:34px 1fr 54px;gap:10px;align-items:center;margin-bottom:8px;font-size:14px}
+.row .t{height:14px;border-radius:7px;background:var(--surf);overflow:hidden}
+.row .t div{height:100%;border-radius:7px;background:var(--ink)}
+.row span:last-child{text-align:right;color:var(--mute)}
+.bars{display:flex;align-items:flex-end;gap:3px;height:90px}
+.bars div{flex:1;border-radius:5px 5px 2px 2px;min-height:5px}
+.bars .n{background:var(--line)}
+.hm{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;gap:4px}
+.hm div{aspect-ratio:1/1;border-radius:4px;background:var(--line);opacity:.6}
+.vs{display:flex;gap:14px}
+.vs div{flex:1;border-radius:18px;padding:16px;background:var(--surf);text-align:center}
+.vs b{display:block;font-size:34px;line-height:1.2}
+.vs small{color:var(--mute);font-size:13px}
+.vd{border-radius:22px;padding:20px 24px;margin:-14px 0 40px;background:var(--surf);border-left:10px solid var(--mute)}
+.vd.bad{border-left-color:var(--m1)}.vd.good{border-left-color:var(--m4)}
+.vd b{display:block;font:800 clamp(22px,4vw,32px)/1.1 Unbounded,sans-serif;letter-spacing:-.03em;margin-bottom:6px}
+.vd span{color:var(--mute)}
+.dn{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.ring{width:150px;height:150px;border-radius:50%;position:relative;flex:none;display:grid;place-items:center}
+.ring::before{content:"";position:absolute;inset:26px;border-radius:50%;background:var(--bg)}
+.ring span{position:relative;font:800 24px Unbounded,sans-serif;letter-spacing:-.03em}
+.dn ul{list-style:none;margin:0;padding:0;font-size:14px;flex:1;min-width:140px}
+.dn li{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.dn li i{width:12px;height:12px;border-radius:50%;flex:none}
+.dn li b{margin-left:auto;font-weight:600}
+[hidden]{display:none!important}
+.tb{display:flex;gap:8px;align-items:center;margin-bottom:28px;flex-wrap:wrap}
+.tb button{padding:9px 20px;border-radius:999px;border:2px solid var(--line);background:transparent;font-weight:600}
+.tb button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.av{margin-left:auto;width:44px;height:44px;border-radius:50%;background:var(--m3);color:#1b1030;display:grid;place-items:center;font:800 18px Unbounded,sans-serif;overflow:hidden;cursor:pointer;flex:none}
+.av img{width:100%;height:100%;object-fit:cover}
+.av.big{width:96px;height:96px;font-size:36px;margin:0;cursor:default}
+.sgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:40px 36px;max-width:1000px}
+.sg h3{font:600 18px Unbounded,sans-serif;margin:0 0 12px}
+.sg p{color:var(--mute);font-size:14px;margin:0 0 12px}
+.pf{display:flex;gap:18px;align-items:center}
+.pfc{flex:1;min-width:0}
+.pfc input{width:100%;padding:11px 16px;border-radius:999px;border:2px solid var(--line);background:var(--surf);margin-bottom:10px}
+.bt{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:10px 18px;border-radius:999px;border:2px solid var(--ink);background:transparent;font-weight:600}
+.btn:hover,.btn.dark{background:var(--ink);color:var(--bg)}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{padding:10px 16px;border-radius:999px;border:2px solid var(--line);background:var(--surf);font-weight:500}
+.seg button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.aiw{max-width:760px}
+.aih{color:var(--mute);margin:0 0 14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.chip{padding:9px 14px;border-radius:999px;border:2px solid var(--line);background:var(--surf);font-size:14px}
+.chip:hover{border-color:var(--ink)}
+.chat{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.msg{max-width:88%;padding:12px 16px;border-radius:20px;line-height:1.55;overflow-wrap:anywhere}
+.msg.me{align-self:flex-end;background:var(--ink);color:var(--bg);border-bottom-right-radius:6px}
+.msg.ai{align-self:flex-start;background:var(--surf);border-bottom-left-radius:6px}
+.send{display:flex;gap:8px;align-items:flex-end}
+.send textarea{min-height:0;flex:1}
+.lnk{background:none;border:0;color:var(--mute);text-decoration:underline;margin-top:8px;padding:0}
+.in{padding:11px 16px;border-radius:999px;border:2px solid var(--line);background:var(--surf);min-width:0}
+.in.w{width:92px}
+select.in{width:100%;margin-top:14px}
+.pt{font:800 clamp(60px,14vw,100px)/1 Unbounded,sans-serif;letter-spacing:-.04em;margin:6px 0 16px}
+.pm{color:var(--mute)}
+.lb2{display:inline-flex;gap:8px;align-items:center;margin:14px 14px 0 0;font-size:14px}
+.tk{display:flex;align-items:center;gap:10px;margin-top:10px}
+.tk span{flex:1;overflow-wrap:anywhere}
+.dn2{text-decoration:line-through;opacity:.5}
+.ck{width:28px;height:28px;border-radius:9px;border:2px solid var(--ink);background:transparent;color:var(--bg);font-weight:700;flex:none}
+.ck.on{background:var(--ink)}
+.trk{display:block;width:100%;text-align:left;padding:8px 12px;border-radius:12px;border:0;background:transparent}
+.trk.on{background:var(--surf);font-weight:600}
+.now{font-weight:600;margin:4px 0}
+input[type=range]{width:100%;accent-color:var(--ink);margin:8px 0}
+.hk{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.hk .seg button{padding:7px 12px;font-size:13px}
+.pill.k-good{border-color:var(--m4)}.pill.k-bad{border-color:var(--m1)}
+.pill.on.k-good{background:var(--m4);color:#1b1030}.pill.on.k-bad{background:var(--m1);color:#1b1030}
+.fx{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:56px;align-items:start}
+@media(max-width:860px){.fx{grid-template-columns:1fr;gap:36px}}
+.fl{text-align:center}.fl .st{text-align:center}.modes{justify-content:center}
+.ring2{position:relative;width:min(310px,78vw);aspect-ratio:1;margin:26px auto 18px}
+.ring2 svg{width:100%;height:100%;transform:rotate(-90deg)}
+.tr2{fill:none;stroke:var(--line);stroke-width:9}
+.pr2{fill:none;stroke:var(--c);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .6s linear,stroke .3s}
+.ctr{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ctr .pt{font-size:clamp(46px,13vw,70px);margin:0}
+.dots{display:flex;gap:10px;justify-content:center}
+.dots i{width:12px;height:12px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--c)}
+.ctl{display:flex;gap:20px;justify-content:center;align-items:center;margin:26px 0}
+.cb{width:56px;height:56px;border-radius:50%;border:2px solid var(--line);background:var(--surf);font-size:22px;line-height:1}
+.cb:hover{border-color:var(--ink)}
+.cb.go{width:88px;height:88px;background:var(--ink);color:var(--bg);border-color:var(--ink);font-size:32px}
+.fl select{max-width:420px}
+.durs{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+#pl{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;margin:-8px -20px 20px;padding:8px 20px;background:var(--bg);border-bottom:2px solid var(--line)}
+.pb{display:flex;align-items:center;gap:6px;position:relative}
+.pn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.pb button{border:0;background:transparent;font-size:18px;width:40px;height:40px;border-radius:50%}
+.pb button:hover{background:var(--surf)}
+.pb .pp{background:var(--ink);color:var(--bg)}
+.pb .pbb{width:auto;padding:0 16px;font-size:15px;border:2px solid var(--line);border-radius:999px;font-weight:500;height:38px}
+.pb input[type=range]{width:130px;margin:0}
+.pls{position:absolute;top:100%;left:0;right:0;max-height:260px;overflow:auto;background:var(--surf);border:2px solid var(--line);border-radius:18px;padding:8px;margin-top:8px;z-index:40}
+@media(max-width:640px){.pb input[type=range]{display:none}}
+.seg button.plus.on{background:var(--m4);color:#1b1030;border-color:var(--m4)}
+.seg button.minus.on{background:var(--m1);color:#1b1030;border-color:var(--m1)}
+.hk .seg button{min-width:44px;font-weight:700;font-size:16px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id='pl'></div><header>
+    <h1><small id="yr"></small><span id="mt"></span></h1>
+    <div class="nav">
+      <button class="ib" id="prev" aria-label="Предыдущий месяц">‹</button>
+      <button class="ib" id="tod" aria-label="К сегодняшнему дню" title="Сегодня">●</button>
+      <button class="ib" id="next" aria-label="Следующий месяц">›</button>
+    </div>
+  </header>
+  <nav class='tb' id='tb'><button class='on' data-t='days'>Дни</button><button data-t='ai'>ИИ</button><button data-t='focus'>Фокус</button><button data-t='cf'>Codeforces</button><button data-t='set'>Настройки</button><span class='av' id='avs' data-t='set' role='button' aria-label='Настройки'></span></nav>
+  <div id='v-days'><div class="main">
+    <div><div class="cal" id="cal"></div><p class="note">Цвет клетки — настроение, кружок с галочкой — продуктивный день.</p></div>
+    <div class="ed" id="ed"></div>
+  </div>
+  <section class="stats">
+    <h2>Статистика</h2>
+    <div class="tabs"><button data-r="m" class="on">Этот месяц</button><button data-r="a">Всё время</button></div>
+    <div id="sx"></div>
+  </section>
+  </div>
+  <div id='v-ai' hidden></div><div id='v-focus' hidden></div><div id='v-cf' hidden></div><div id='v-set' hidden></div>
+</div>
+<script>
+const MOODS=['😞','😕','😐','🙂','😄'];
+const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MG=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const WDF=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+const WDS=['пн','вт','ср','чт','пт','сб','вс'];
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const now=new Date(),TODAY=iso(now);
+let S={habits:[{id:'p',name:'Продуктивный день'}],days:{}};
+let view={y:now.getFullYear(),m:now.getMonth()},sel=TODAY,store=null,timer=null,range='m';
+
+async function load(){
+  try{
+    if(window.claude){
+      const db=await claude.use('db'),u=await claude.use('user');
+      if(db&&u){
+        const id=await u.id();
+        store=db.collection('data/users/'+id).doc('tracker');
+        const s=await store.get();
+        if(s.exists&&s.data().json){S=JSON.parse(s.data().json);return}
+      }
+    }
+  }catch(e){store=null}
+  try{const r=localStorage.getItem('moi-dni');if(r&&!store)S=JSON.parse(r)}catch(e){}
+}
+function save(){
+  clearTimeout(timer);
+  if($('st'))$('st').textContent='Сохраняю…';
+  timer=setTimeout(async()=>{
+    const j=JSON.stringify(S);let msg='Сохранено в этом браузере';
+    try{localStorage.setItem('moi-dni',j)}catch(e){}
+    try{if(store){await store.set({json:j});msg='Сохранено'}}catch(e){msg='Облако недоступно, копия лежит в браузере'}
+    if($('st'))$('st').textContent=msg;
+  },400);
+}
+const day=k=>S.days[k]||(S.days[k]={c:[],m:0,t:''});
+const has=h=>S.habits.some(x=>x.id===h);
+const doneH=(k,h)=>{const d=S.days[k];return !!(d&&d.c.includes(h))};
+const isDone=k=>doneH(k,S.habits[0].id);
+const rec=x=>x&&(x.m||x.t||x.c.length);
+function streakFor(h){
+  const ks=Object.keys(S.days).filter(k=>doneH(k,h)).sort();
+  let best=0,run=0,prev=null;
+  for(const k of ks){run=prev&&(new Date(k)-new Date(prev))===864e5?run+1:1;best=Math.max(best,run);prev=k}
+  let cur=0,d=new Date(now);
+  if(!doneH(TODAY,h))d.setDate(d.getDate()-1);
+  while(doneH(iso(d),h)){cur++;d.setDate(d.getDate()-1)}
+  return {cur,best};
+}
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+
+function renderCal(){
+  $('mt').textContent=MN[view.m];$('yr').textContent=view.y;
+  const n=new Date(view.y,view.m+1,0).getDate(),ws=S.set&&S.set.ws===0?0:1,off=(new Date(view.y,view.m,1).getDay()-ws+7)%7;
+  let h=(ws?WDS:[WDS[6],...WDS.slice(0,6)]).map(w=>`<div class="wd">${w}</div>`).join('');
+  for(let i=0;i<off;i++)h+='<div class="d e"></div>';
+  for(let d=1;d<=n;d++){
+    const k=view.y+'-'+pad(view.m+1)+'-'+pad(d),x=S.days[k],r=rec(x);
+    const cls=['d',k===sel?'sel':'',k===TODAY?'tdy':'',k>TODAY?'f':'',r?'has mc'+(x.m||0):''].join(' ');
+    h+=`<button class="${cls}" data-k="${k}" aria-label="${d} ${MG[view.m]}"><b>${d}</b><i>${x&&x.m?MOODS[x.m-1]:''}</i>${x&&isDone(k)?'<u>✓</u>':''}</button>`;
+  }
+  $('cal').innerHTML=h;
+}
+function renderEd(){
+  const x=day(sel),dt=new Date(sel+'T12:00:00');
+  let h=`<h2>${dt.getDate()} ${MG[dt.getMonth()]}</h2><p class="sub">${WDF[dt.getDay()]}${sel===TODAY?', сегодня':''}</p><div class="pills">`;
+  h+=S.habits.map((hb,i)=>`<span class="pill${i?'':' big'}${x.c.includes(hb.id)?' on':''}${hb.k==='bad'?' k-bad':' k-good'}" data-h="${hb.id}" role="checkbox" aria-checked="${x.c.includes(hb.id)}" tabindex="0">${x.c.includes(hb.id)?'✓':'○'} ${esc(hb.name)}${i?`<s data-del="${hb.id}" role="button" aria-label="Удалить">×</s>`:''}</span>`).join('');
+  h+=`</div><span class="lb">Настроение</span><div class="moods">${MOODS.map((e,i)=>`<button class="mc${i+1}${x.m===i+1?' on':''}" data-m="${i+1}" aria-label="Настроение ${i+1} из 5">${e}</button>`).join('')}</div>`;
+  h+=`<label class="lb" for="tx">Как прошёл день</label><textarea id="tx" placeholder="Что было, что запомнилось"></textarea>`;
+  h+=`<label class="lb" for="nh">Новая галочка</label><div class="add"><input id="nh" maxlength="40" placeholder="Например, «Спорт»"><button id="ah">Добавить</button></div><div class="st" id="st"></div>`;
+  $('ed').innerHTML=h;$('tx').value=x.t||'';
+}
+function verdict(){
+  if(range!=='m')return '';
+  const n=new Date(view.y,view.m+1,0).getDate();
+  const isCur=view.y===now.getFullYear()&&view.m===now.getMonth();
+  const past=view.y*12+view.m<now.getFullYear()*12+now.getMonth();
+  if(!isCur&&!past)return '';
+  const el=isCur?now.getDate():n;
+  let d=0;for(let i=1;i<=el;i++)if(isDone(view.y+'-'+pad(view.m+1)+'-'+pad(i)))d++;
+  if(el<n/2)return `<div class="vd"><b>Месяц только начался</b><span>Прошло ${el} из ${n} дней, продуктивных ${d}. Вердикт появится, когда пройдёт половина месяца.</span></div>`;
+  const bad=d<el/2;
+  return `<div class="vd ${bad?'bad':'good'}"><b>${bad?'Месяц пока не удался 😬':'Месяц удался 🔥'}</b><span>Продуктивных дней ${d} из ${el}${bad?', это меньше половины. Ещё можно выправить.':', это больше половины.'}</span></div>`;
+}
+function donut(t,s,p,mid){
+  const tot=p.reduce((a,x)=>a+x.c,0);let a=0;
+  const g=tot?p.map(x=>{const f=a;a+=x.c/tot*100;return `${x.col} ${f}% ${a}%`}).join(','):'var(--line) 0 100%';
+  return `<div class="blk"><h3>${t}</h3><p class="s">${s}</p><div class="dn"><div class="ring" style="background:conic-gradient(${g})"><span>${mid}</span></div><ul>${p.map(x=>`<li><i style="background:${x.col}"></i>${x.l}<b>${x.c}</b></li>`).join('')}</ul></div></div>`;
+}
+function donuts(ks,done,ms,mk,all){
+  const span=all?(mk.length?Math.round((new Date(TODAY)-new Date(mk[0]))/864e5)+1:0):mk.filter(k=>k<=TODAY).length;
+  const none=Math.max(0,span-ks.length);
+  const d1=donut('Какими были дни','Продуктивные, без галочки и без записи',[{l:'Продуктивные',c:done,col:'var(--ink)'},{l:'Без галочки',c:ks.length-done,col:'#b69cf0'},{l:'Без записи',c:none,col:'var(--line)'}],span?Math.round(done/span*100)+'%':'—');
+  const a=avg(ms);
+  const d2=donut('Настроение','Доли каждого смайлика',[1,2,3,4,5].map(v=>({l:MOODS[v-1],c:ms.filter(m=>m===v).length,col:`var(--m${v})`})),a?MOODS[Math.round(a)-1]:'—');
+  return d1+d2;
+}
+function renderStats(){
+  const all=range==='a';
+  const mk=[];
+  if(all)Object.keys(S.days).sort().forEach(k=>mk.push(k));
+  else{const n=new Date(view.y,view.m+1,0).getDate();for(let d=1;d<=n;d++)mk.push(view.y+'-'+pad(view.m+1)+'-'+pad(d))}
+  const ks=mk.filter(k=>k<=TODAY&&rec(S.days[k]));
+  const done=ks.filter(isDone).length,ms=ks.map(k=>S.days[k].m).filter(Boolean);
+  const words=ks.reduce((s,k)=>s+((S.days[k].t||'').trim().split(/\s+/).filter(Boolean).length),0);
+  const pr=streakFor(S.habits[0].id),av=avg(ms);
+  let h=`<div class="kp">
+  <div><b>${pr.cur}</b><small>дней подряд сейчас</small></div>
+  <div><b>${pr.best}</b><small>лучшая серия</small></div>
+  <div><b>${done}</b><small>продуктивных дней</small></div>
+  <div><b>${ks.length?Math.round(done/ks.length*100):0}%</b><small>доля продуктивных</small></div>
+  <div><b>${av?MOODS[Math.round(av)-1]:'—'}</b><small>${av?'среднее '+av.toFixed(1)+' из 5':'пока нет оценок'}</small></div>
+  <div><b>${ks.length}</b><small>дней записано</small></div>
+  <div><b>${words}</b><small>слов в описаниях</small></div><div><b style='color:var(--m4)'>+${sc(ks,false)}</b><small>Прокачка (только плюсы)</small></div><div><b style='color:var(--m1)'>−${sc(ks,true)}</b><small>Деградация (минусы)</small></div><div><b>${sc(ks,false)-sc(ks,true)}</b><small>Баланс</small></div></div>${verdict()}<div class="blocks">${donuts(ks,done,ms,mk,all)}${plusBlock(ks)}`;
+  // дни недели
+  const wk=[0,1,2,3,4,5,6].map(i=>{const q=ks.filter(k=>(new Date(k+'T12:00:00').getDay()+6)%7===i);return{n:q.length,d:q.filter(isDone).length,m:avg(q.map(k=>S.days[k].m).filter(Boolean))}});
+  const bestWd=wk.reduce((b,x,i)=>x.n&&(b<0||x.d/x.n>wk[b].d/wk[b].n)?i:b,-1);
+  h+=`<div class="blk"><h3>Продуктивность по дням недели</h3><p class="s">${bestWd>=0?'Лучший день: '+WDF[(bestWd+1)%7]:'Пока мало данных'}</p>`+
+  wk.map((x,i)=>{const p=x.n?Math.round(x.d/x.n*100):0;return `<div class="row"><span>${WDS[i]}</span><div class="t"><div style="width:${p}%"></div></div><span>${x.n?p+'%':'—'}</span></div>`}).join('')+'</div>';
+  h+=`<div class="blk"><h3>Настроение по дням недели</h3><p class="s">Среднее за выбранный период</p>`+
+  wk.map((x,i)=>`<div class="row"><span>${WDS[i]}</span><div class="t"><div style="width:${x.m*20}%;background:var(--m${x.m?Math.round(x.m):1})"></div></div><span>${x.m?MOODS[Math.round(x.m)-1]+' '+x.m.toFixed(1):'—'}</span></div>`).join('')+'</div>';
+  // распределение
+  const cnt=[1,2,3,4,5].map(v=>ms.filter(m=>m===v).length),mx=Math.max(1,...cnt);
+  h+=`<div class="blk"><h3>Какое настроение чаще</h3><p class="s">Сколько дней с каждым смайликом</p>`+
+  cnt.map((c,i)=>`<div class="row"><span>${MOODS[i]}</span><div class="t"><div style="width:${c/mx*100}%;background:var(--m${i+1})"></div></div><span>${c}</span></div>`).join('')+'</div>';
+  // влияние
+  const md=ks.filter(k=>isDone(k)&&S.days[k].m).map(k=>S.days[k].m),mn=ks.filter(k=>!isDone(k)&&S.days[k].m).map(k=>S.days[k].m);
+  const f=a=>a.length?MOODS[Math.round(avg(a))-1]:'—';
+  h+=`<div class="blk"><h3>Продуктивность и настроение</h3><p class="s">Какое настроение в среднем в дни с галочкой и без</p><div class="vs"><div><b>${f(md)}</b><small>с галочкой${md.length?' · '+avg(md).toFixed(1):''}</small></div><div><b>${f(mn)}</b><small>без галочки${mn.length?' · '+avg(mn).toFixed(1):''}</small></div></div></div>`;
+  // 30 дней
+  const b=[];for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);b.push((S.days[iso(d)]||{}).m||0)}
+  h+=`<div class="blk"><h3>Настроение за 30 дней</h3><p class="s">Каждый столбик — один день, справа сегодня</p><div class="bars">${b.map(m=>m?`<div style="height:${m*20}%;background:var(--m${m})" title="${MOODS[m-1]}"></div>`:'<div class="n" style="height:5px"></div>').join('')}</div></div>`;
+  // тепловая карта
+  const hm=[],start=new Date(now);start.setDate(start.getDate()-((now.getDay()+6)%7)-7*19);
+  for(let i=0;i<140;i++){const d=new Date(start);d.setDate(start.getDate()+i);const k=iso(d),x=S.days[k];
+    const st=k>TODAY?'visibility:hidden':x&&isDone(k)?`opacity:1;background:var(--m${x.m||3})`:rec(x)?`opacity:.5;background:var(--m${x.m||3})`:'';
+    hm.push(`<div style="${st}" title="${k}"></div>`)}
+  h+=`<div class="blk"><h3>Последние 20 недель</h3><p class="s">Яркие клетки — продуктивные дни, бледные — записанные без галочки</p><div class="hm">${hm.join('')}</div></div>`;
+  // галочки
+  h+=`<div class="blk"><h3>Все галочки</h3><p class="s">Доля дней и серия подряд</p>`+S.habits.map(hb=>{
+    const c=ks.filter(k=>doneH(k,hb.id)).length,p=ks.length?Math.round(c/ks.length*100):0,s=streakFor(hb.id);
+    return `<div class="row" style="grid-template-columns:1fr 54px"><span>${esc(hb.name)} · серия ${s.cur}, рекорд ${s.best}</span><span>${p}%</span></div><div class="t" style="height:10px;border-radius:5px;background:var(--surf);margin:-2px 0 12px;overflow:hidden"><div style="height:100%;width:${p}%;background:var(--ink)"></div></div>`}).join('')+'</div>';
+  $('sx').innerHTML=h+'</div>';
+}
+const RU={MN:[...MN],MG:[...MG],WDF:[...WDF],WDS:[...WDS]};
+const EN={MN:['January','February','March','April','May','June','July','August','September','October','November','December'],MG:['January','February','March','April','May','June','July','August','September','October','November','December'],WDF:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],WDS:['Mo','Tu','We','Th','Fr','Sa','Su']};
+const T=`Мои дни|My days~Настройки|Settings~Дни|Days~ИИ|AI~К сегодняшнему дню|Go to today~Сегодня|Today~Предыдущий месяц|Previous month~Следующий месяц|Next month~Цвет клетки — настроение, кружок с галочкой — продуктивный день.|Cell color is the mood, a circle with a check is a productive day.~Статистика|Statistics~Этот месяц|This month~Всё время|All time~, сегодня|, today~Настроение|Mood~Как прошёл день|How the day went~Что было, что запомнилось|What happened, what stuck~Новая галочка|New check~Например, «Спорт»|For example, “Sport”~Добавить|Add~Сохраняю…|Saving…~Сохранено в этом браузере|Saved in this browser~Сохранено|Saved~Облако недоступно, копия лежит в браузере|Cloud unavailable, a copy is kept in the browser~Продуктивный день|Productive day~Удалить|Delete~дней подряд сейчас|day streak now~лучшая серия|best streak~продуктивных дней|productive days~доля продуктивных|productive share~пока нет оценок|no ratings yet~дней записано|days logged~слов в описаниях|words written~среднее |avg ~Месяц только начался|The month has just started~Прошло |Passed ~дней, продуктивных |days, productive ~Вердикт появится, когда пройдёт половина месяца.|The verdict appears once half the month has passed.~Месяц пока не удался|This month is not going well~Месяц удался|This month is going well~Продуктивных дней |Productive days ~, это меньше половины. Ещё можно выправить.|, under half. You can still turn it around.~, это больше половины.|, over half.~ из | of ~Какими были дни|What kind of days~Продуктивные, без галочки и без записи|Productive, no check, and not logged~Продуктивные|Productive~Без галочки|No check~Без записи|Not logged~Доли каждого смайлика|Share of each emoji~Продуктивность по дням недели|Productivity by weekday~Пока мало данных|Not enough data yet~Лучший день: |Best day: ~Среднее за выбранный период|Average for the period~Настроение по дням недели|Mood by weekday~Какое настроение чаще|Most common mood~Сколько дней с каждым смайликом|Days per emoji~Продуктивность и настроение|Productivity and mood~Какое настроение в среднем в дни с галочкой и без|Average mood on days with and without the check~с галочкой|with check~без галочки|without check~Настроение за 30 дней|Mood over 30 days~Каждый столбик — один день, справа сегодня|Each bar is a day, today on the right~Последние 20 недель|Last 20 weeks~Яркие клетки — продуктивные дни, бледные — записанные без галочки|Bright cells are productive days, pale ones are logged without the check~Все галочки|All checks~Доля дней и серия подряд|Share of days and streak~ · серия | · streak ~, рекорд |, best ~Спросить|Ask~Напиши вопрос|Type your question~Очистить чат|Clear chat~Как прошёл выбранный день?|How did the selected day go?~Итоги этого месяца|This month in review~Что у меня получается лучше всего?|What am I doing best?~Что мне улучшить?|What should I improve?~Спроси про любой день, неделю или месяц. ИИ видит твои галочки, настроение и описания.|Ask about any day, week or month. The AI sees your checks, moods and notes.~Профиль|Profile~Твоё имя|Your name~Сменить фото|Change photo~Убрать|Remove~Аккаунт|Account~Данные синхронизируются с твоим аккаунтом Claude.|Data syncs with your Claude account.~Облако сейчас недоступно, данные лежат только в этом браузере.|The cloud is unavailable, data is stored only in this browser.~Вход через Google внутри самой страницы сделать нельзя. Вход идёт через твой аккаунт Claude, а в него можно заходить через Gmail.|Google sign-in inside the page isn’t possible. You sign in through your Claude account, which can use Gmail.~Тема|Theme~Как в системе|System~Светлая|Light~Тёмная|Dark~Язык|Language~Неделя|Week~С понедельника|Starts Monday~С воскресенья|Starts Sunday~Данные|Data~Экспорт JSON|Export JSON~Импорт JSON|Import JSON~Удалить всё|Delete everything~Точно удалить? Нажми ещё раз|Sure? Click again~ИИ работает через Claude прямо на странице, ключ API не нужен.|The AI runs through Claude right on the page, no API key needed.~Импорт добавляет дни из файла к текущим, одинаковые даты заменяются.|Import adds days from the file to the current ones, matching dates are replaced.~Файл сохранён|File saved~Скачивание недоступно, JSON скопирован в буфер обмена|Download unavailable, JSON copied to clipboard~Скачивание недоступно|Download unavailable~Импортировано дней: |Days imported: ~Не получилось прочитать файл, нужен JSON из этого трекера|Could not read the file, it must be JSON from this tracker~Все данные удалены|All data deleted~ИИ недоступен в этом окне. Открой страницу в своём аккаунте Claude.|The AI is unavailable here. Open the page in your own Claude account.~Не удалось получить ответ: |Could not get an answer: ~Думаю…|Thinking…`.split('~').map(l=>l.split('|')).sort((a,b)=>b[0].length-a[0].length);
+const OR=new WeakMap(),NL=String.fromCharCode(10);
+const isEn=()=>S.set&&S.set.lang==='en';
+const tx=s=>{for(const [a,b] of T)if(s.includes(a))s=s.split(a).join(b);return s};
+const L=s=>isEn()?tx(s):s;
+const br=s=>esc(s).split(NL).join('<br>');
+function i18n(root){
+  const en=isEn(),w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
+  while(n=w.nextNode()){
+    if(n.parentElement&&n.parentElement.closest('.nt,script'))continue;
+    if(!OR.has(n))OR.set(n,n.nodeValue);
+    n.nodeValue=en?tx(OR.get(n)):OR.get(n);
+  }
+  root.querySelectorAll('[placeholder],[aria-label],[title]').forEach(el=>['placeholder','aria-label','title'].forEach(a=>{
+    if(!el.hasAttribute(a))return;
+    el.__o=el.__o||{};if(el.__o[a]===undefined)el.__o[a]=el.getAttribute(a);
+    el.setAttribute(a,en?tx(el.__o[a]):el.__o[a]);
+  }));
+}
+function applyLang(){const l=isEn()?EN:RU;MN.splice(0,12,...l.MN);MG.splice(0,12,...l.MG);WDF.splice(0,7,...l.WDF);WDS.splice(0,7,...l.WDS);document.documentElement.lang=isEn()?'en':'ru'}
+function applyTheme(){const t=S.set.theme,r=document.documentElement;if(t==='light'||t==='dark')r.setAttribute('data-theme',t);else r.removeAttribute('data-theme')}
+function renderAv(){const s=S.set;$('avs').innerHTML=s.photo?`<img src='${s.photo}' alt=''>`:esc(Array.from(s.name||'?')[0].toUpperCase())}
+{const a=renderCal,b=renderEd,c=renderStats;
+renderCal=function(){a();i18n($('cal'));i18n($('mt'))};
+renderEd=function(){b();i18n($('ed'))};
+renderStats=function(){c();i18n($('sx'))};}
+function all(){renderCal();renderEd();renderStats()}
+T.push(...`Фокус|Focus~Старт|Start~Пауза|Pause~Сброс|Reset~Пропустить|Skip~Перерыв|Break~Задачи|Tasks~Новая задача|New task~Без задачи|No task~Музыка|Music~Добавить песни|Add songs~Хорошая|Good~Плохая|Bad~Обычная|Neutral~Галочки|Checks~Помодоро|Pomodoro~Фокус, мин|Focus, min~Перерыв, мин|Break, min~Сессий сегодня|Sessions today~Минут фокуса сегодня|Focus minutes today~Отправить итоги дня ИИ|Send today to AI~Решил задачу|Log a solved problem~Задача, например 1850A|Problem, e.g. 1850A~Рейтинг|Rating~Всего решено|Solved total~Решено сегодня|Solved today~За 7 дней|Last 7 days~За месяц|This month~Средний рейтинг|Average rating~Макс. рейтинг|Max rating~Серия дней|Day streak~Рекорд за день|Best day~Решённые задачи по рейтингу|Solved by rating~Решено за 14 дней|Solved in 14 days~Последние задачи|Recent problems`.split('~').map(l=>l.split('|')));T.sort((a,b)=>b[0].length-a[0].length);
+const P={mode:'f',left:null,run:false,iv:null,cyc:0,task:'',end:0};
+const AU=new Audio(),M={list:[],i:-1};AU.volume=.7;
+const fm2=s=>pad(Math.floor(s/60))+':'+pad(s%60);
+const dur=()=>(P.mode==='f'?S.set.fm||25:(P.cyc&&P.cyc%4===0?15:S.set.bm||5))*60;
+function fmsg(s){const e=$('fs');if(e)e.textContent=L(s)}
+function updP(){const e=$('pt');if(e)e.textContent=fm2(P.left);const g=$('prg');if(g)g.style.strokeDashoffset=(565.5*(1-P.left/dur())).toFixed(1);document.title=P.run?fm2(P.left)+' · Мои дни':'Мои дни'}
+function startP(){P.end=Date.now()+P.left*1000;P.run=true;clearInterval(P.iv);P.iv=setInterval(tick,500)}
+function stopP(){clearInterval(P.iv);P.run=false}
+function tick(){P.left=Math.max(0,Math.round((P.end-Date.now())/1000));updP();if(P.left===0)endP(true)}
+function beep(){try{const c=new AudioContext(),o=c.createOscillator();o.connect(c.destination);o.start();setTimeout(()=>{o.stop();c.close()},450)}catch(e){}}
+function endP(rec){
+  stopP();
+  if(rec){beep();if(P.mode==='f'){const t=S.tasks.find(x=>x.id===P.task);S.focus.push({d:TODAY,t:t?t.t:'',m:S.set.fm||25});P.cyc++;save();syncSoon()}}
+  P.mode=P.mode==='f'?'b':'f';P.left=dur();if(tab==='focus')renderFocus();
+}
+let sy=null;function syncSoon(){clearTimeout(sy);sy=setTimeout(()=>aiSync(false),1500)}
+async function aiSync(manual){
+  let sm=null;try{sm=await getSM()}catch(e){}
+  if(!sm){if(manual)fmsg('ИИ недоступен в этом окне. Открой страницу в своём аккаунте Claude.');return}
+  const ss=S.focus.filter(f=>f.d===TODAY),ts=S.tasks.filter(t=>t.dd===TODAY);
+  if(!ss.length&&!ts.length){if(manual)fmsg('Сегодня пока нет сессий и выполненных задач');return}
+  fmsg('ИИ анализирует…');
+  const q='Вот что пользователь сделал сегодня.'+NL+'Сессии фокуса: '+ss.map(f=>(f.t||'без задачи')+' ('+f.m+' мин)').join('; ')+NL+'Выполненные задачи: '+(ts.map(t=>t.t).join('; ')||'нет')+NL+'Ответь только JSON с двойными кавычками, без пояснений, с полями summary (одна короткая фраза о том, что сделано) и productive (true или false). productive=true, если набралось не меньше 50 минут фокуса или есть выполненные задачи. Язык фразы: '+(isEn()?'английский':'русский')+'.';
+  try{
+    const r=await sm([{role:'user',content:q}],{cache:false}),a=r.text.indexOf('{'),b=r.text.lastIndexOf('}'),o=JSON.parse(r.text.slice(a,b+1));
+    const x=day(TODAY);x.t=(x.t||'').split(NL).filter(l=>!l.startsWith('🍅 ')).join(NL).trim();
+    x.t=(x.t?x.t+NL:'')+'🍅 '+String(o.summary).slice(0,200);
+    if(o.productive&&!x.c.includes(S.habits[0].id))x.c.push(S.habits[0].id);
+    save();fmsg('ИИ добавил запись в сегодняшний день');
+  }catch(e){fmsg('Не удалось получить ответ: ')}
+}
+function playIdx(i){M.i=i;AU.src=M.list[i].u;AU.play().catch(()=>{});renderPlayer()}
+const mNext=()=>{if(M.list.length)playIdx((M.i+1)%M.list.length)};
+const mPrev=()=>{if(M.list.length)playIdx((M.i-1+M.list.length)%M.list.length)};
+AU.onended=mNext;
+AU.ontimeupdate=()=>{const r=$('ppr');if(r&&AU.duration){r.max=AU.duration;r.value=AU.currentTime}};
+function renderFocusOld(){
+  if(P.left===null)P.left=dur();
+  const ts=S.tasks.filter(t=>!t.done),td=S.focus.filter(f=>f.d===TODAY),mins=td.reduce((s,f)=>s+f.m,0);
+  $('v-focus').innerHTML=`<div class='sgs'>
+<div class='sg'><h3>Помодоро</h3><div class='pm'>${P.mode==='f'?'Фокус':'Перерыв'} · ${P.cyc+1}</div><div class='pt' id='pt'>${fm2(P.left)}</div>
+<div class='bt'><button class='btn dark' data-a='go'>${P.run?'Пауза':'Старт'}</button><button class='btn' data-a='rs'>Сброс</button><button class='btn' data-a='sk'>Пропустить</button></div>
+<label class='lb2'>Фокус, мин <input class='in w' type='number' min='1' max='120' id='fm' value='${S.set.fm||25}'></label><label class='lb2'>Перерыв, мин <input class='in w' type='number' min='1' max='60' id='bm' value='${S.set.bm||5}'></label>
+<select class='in' id='ts'><option value=''>Без задачи</option>${ts.map(t=>`<option value='${t.id}'${t.id===P.task?' selected':''}>${esc(t.t)}</option>`).join('')}</select>
+<div class='kp' style='margin-top:22px'><div><b>${td.length}</b><small>Сессий сегодня</small></div><div><b>${mins}</b><small>Минут фокуса сегодня</small></div></div>
+<button class='btn' data-a='ai'>Отправить итоги дня ИИ</button><p style='margin-top:10px'>После каждой фокус-сессии ИИ сам разберёт сделанное, допишет строку в описание сегодняшнего дня и при необходимости поставит главную галочку.</p><div class='st' id='fs'></div></div>
+<div class='sg'><h3>Задачи</h3><div class='add'><input id='tn' class='in' maxlength='80' placeholder='Новая задача'><button data-a='ta'>Добавить</button></div>${S.tasks.map(t=>`<div class='tk'><button class='ck${t.done?' on':''}' data-td='${t.id}'>${t.done?'✓':''}</button><span class='nt${t.done?' dn2':''}'>${esc(t.t)}</span><button class='lnk' data-tx='${t.id}'>×</button></div>`).join('')}</div>
+<div class='sg'><h3>Музыка</h3><p>Spotify подключить нельзя: страница не может обращаться к его серверам. Добавляй скачанные песни файлами с устройства, список сбрасывается при обновлении страницы.</p><div class='now nt'>${M.i>=0?esc(M.list[M.i].n):'—'}</div><input type='range' id='mpr' min='0' max='${AU.duration||1}' step='1' value='${AU.currentTime||0}'>
+<div class='bt'><button class='btn' data-a='pv'>⏮</button><button class='btn dark' data-a='pp'>${AU.paused?'▶':'⏸'}</button><button class='btn' data-a='nx'>⏭</button><button class='btn' data-a='mf'>Добавить песни</button><input type='file' id='mfi' accept='audio/*' multiple hidden></div><input type='range' id='mv' min='0' max='1' step='.05' value='${AU.volume}'>${M.list.map((m,i)=>`<button class='trk nt${i===M.i?' on':''}' data-ti='${i}'>${esc(m.n)}</button>`).join('')}</div></div>`;
+  i18n($('v-focus'));
+}
+function addTask(){const v=$('tn').value.trim();if(!v)return;S.tasks.push({id:'t'+Date.now().toString(36),t:v,done:false,dd:''});save();renderFocus()}
+$('v-focus').onclick=e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;
+  if(b.dataset.td){const t=S.tasks.find(x=>x.id===b.dataset.td);if(t){t.done=!t.done;t.dd=t.done?TODAY:'';save();renderFocus();if(t.done)syncSoon()}}
+  else if(b.dataset.tx){S.tasks=S.tasks.filter(x=>x.id!==b.dataset.tx);save();renderFocus()}
+  else if(b.dataset.ti)playIdx(+b.dataset.ti);
+  else if(a==='mdf'||a==='mdb'){stopP();P.mode=a==='mdf'?'f':'b';P.left=dur();renderFocus()}
+  else if(a==='go'){if(P.run)stopP();else startP();renderFocus()}
+  else if(a==='rs'){stopP();P.left=dur();renderFocus()}
+  else if(a==='sk')endP(false);
+  else if(a==='ta')addTask();
+  else if(a==='ai')aiSync(true);
+  else if(a==='mf')$('mfi').click();
+  else if(a==='pv')mPrev();else if(a==='nx')mNext();
+  else if(a==='pp'){if(M.i<0&&M.list.length)playIdx(0);else{if(AU.paused)AU.play().catch(()=>{});else AU.pause();renderFocus()}}
+};
+$('v-focus').onchange=e=>{const t=e.target;
+  if(t.id==='mfi'){for(const f of t.files)M.list.push({n:f.name.split('.').slice(0,-1).join('.')||f.name,u:URL.createObjectURL(f)});if(M.i<0&&M.list.length)playIdx(0);else renderFocus();t.value=''}
+  else if(t.id==='ts')P.task=t.value;
+  else if(t.id==='fm'||t.id==='bm'){S.set[t.id]=Math.min(120,Math.max(1,+t.value||(t.id==='fm'?25:5)));save();if(!P.run){P.left=dur();renderFocus()}}
+};
+$('v-focus').oninput=e=>{if(e.target.id==='mpr')AU.currentTime=+e.target.value;if(e.target.id==='mv')AU.volume=+e.target.value};
+$('v-focus').onkeydown=e=>{if(e.target.id==='tn'&&e.key==='Enter')addTask()};
+function renderCF(){
+  const byD={};S.cf.forEach(p=>byD[p.d]=(byD[p.d]||0)+1);
+  const dd=d=>iso(new Date(now.getFullYear(),now.getMonth(),now.getDate()-d));
+  const last=n=>{let c=0;for(let i=0;i<n;i++)c+=byD[dd(i)]||0;return c};
+  const rs=S.cf.map(p=>p.r).filter(Boolean),mon=S.cf.filter(p=>p.d.slice(0,7)===TODAY.slice(0,7)).length;
+  let st=0,i=byD[TODAY]?0:1;while(byD[dd(i)]){st++;i++}
+  const bk={};rs.forEach(r=>{const b=Math.floor(r/100)*100;bk[b]=(bk[b]||0)+1});
+  const bs=Object.keys(bk).map(Number).sort((a,b)=>a-b),mx=Math.max(1,...bs.map(b=>bk[b]));
+  const bars=[];for(let j=13;j>=0;j--)bars.push(byD[dd(j)]||0);const bm=Math.max(1,...bars);
+  const rec2=[...S.cf].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,15);
+  $('v-cf').innerHTML=`<div class='sgs'><div class='sg'><h3>Решил задачу</h3><p>Ник Codeforces указывается в настройках. Автосинхронизация работает, когда страница размещена на своём домене, например на Vercel. Внутри Claude запросы блокируются, там задачи добавляются вручную.</p><div class='pfc'><input id='cn' class='in' style='width:100%;margin-bottom:10px' maxlength='40' placeholder='Задача, например 1850A'><div class='bt'><input id='cr' class='in w' type='number' placeholder='Рейтинг' min='0' max='4000' step='100'><input id='cd' class='in' type='date' value='${TODAY}'><button class='btn dark' data-c='add'>Добавить</button></div></div><button class='btn' data-c='sync' style='margin-top:12px'>Синхронизировать с Codeforces</button><div class='st' id='cfs'></div></div></div>
+<div class='kp' style='margin:34px 0'><div><b>${S.cf.length}</b><small>Всего решено</small></div><div><b>${byD[TODAY]||0}</b><small>Решено сегодня</small></div><div><b>${last(7)}</b><small>За 7 дней</small></div><div><b>${mon}</b><small>За месяц</small></div><div><b>${rs.length?Math.round(rs.reduce((a,b)=>a+b,0)/rs.length):'—'}</b><small>Средний рейтинг</small></div><div><b>${rs.length?Math.max(...rs):'—'}</b><small>Макс. рейтинг</small></div><div><b>${st}</b><small>Серия дней</small></div><div><b>${Math.max(0,...Object.values(byD))}</b><small>Рекорд за день</small></div></div>
+<div class='blocks'><div class='blk'><h3>Решённые задачи по рейтингу</h3><p class='s'>Сколько задач в каждой сотне</p>${bs.map(b=>`<div class='row' style='grid-template-columns:48px 1fr 34px'><span>${b}</span><div class='t'><div style='width:${bk[b]/mx*100}%;background:var(--m5)'></div></div><span>${bk[b]}</span></div>`).join('')||'—'}</div>
+<div class='blk'><h3>Решено за 14 дней</h3><p class='s'>Справа сегодня</p><div class='bars'>${bars.map(c=>c?`<div style='height:${c/bm*100}%;background:var(--m5)' title='${c}'></div>`:`<div class='n' style='height:5px'></div>`).join('')}</div></div>
+<div class='blk'><h3>Последние задачи</h3><p class='s'> </p>${rec2.map(p=>`<div class='tk nt'><span>${esc(p.p)}${p.r?' · '+p.r:''}</span><span style='flex:none;color:var(--mute)'>${p.d}</span><button class='lnk' data-cx='${p.id}'>×</button></div>`).join('')||'—'}</div></div>`;
+  i18n($('v-cf'));
+}
+$('v-cf').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.c==='add'){const n=$('cn').value.trim();if(!n)return;S.cf.push({id:'c'+Date.now().toString(36),d:$('cd').value||TODAY,p:n,r:+$('cr').value||0});save();renderCF()}
+  else if(b.dataset.c==='sync')syncCF();else if(b.dataset.cx){S.cf=S.cf.filter(p=>p.id!==b.dataset.cx);save();renderCF()}};
+T.push(...`Добавить музыку|Add music~Прокачка (только плюсы)|Growth (pluses only)~Деградация (минусы)|Decline (minuses)~Баланс|Balance~Прокачка: только плюсы|Growth: pluses only~Минусы здесь не считаются, видно только что ты развивал|Minuses are ignored here, you see only what you built up~Интеграции|Integrations~Ник Codeforces|Codeforces handle~Синхронизировать с Codeforces|Sync with Codeforces~Добавлено задач: |Problems added: ~Загружаю…|Loading…~Укажи ник Codeforces в настройках|Set your Codeforces handle in settings`.split('~').map(l=>l.split('|')));T.sort((a,b)=>b[0].length-a[0].length);
+const keyGet=()=>{try{return localStorage.getItem('moi-dni-key')||''}catch(e){return ''}};
+const keySet=v=>{try{if(v)localStorage.setItem('moi-dni-key',v);else localStorage.removeItem('moi-dni-key')}catch(e){}};
+async function getSM(){
+  try{const s=await claude.use('sample');if(s)return s}catch(e){}
+  const k=keyGet();if(!k)return null;
+  return async msgs=>{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:1000,messages:msgs})});
+    const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
+    return {text:(j.content||[]).map(c=>c.text||'').join('')};
+  };
+}
+const sc=(ks,neg)=>ks.reduce((s,k)=>s+S.habits.reduce((t,h)=>t+(doneH(k,h.id)&&((h.k==='bad')===neg)?1:0),0),0);
+function plusBlock(ks){
+  const hs=S.habits.filter(h=>h.k!=='bad').map(h=>({n:h.name,c:ks.filter(k=>doneH(k,h.id)).length})),mx=Math.max(1,...hs.map(x=>x.c));
+  return `<div class='blk'><h3>Прокачка: только плюсы</h3><p class='s'>Минусы здесь не считаются, видно только что ты развивал</p>${hs.map(x=>`<div class='row' style='grid-template-columns:110px 1fr 34px'><span class='nt' style='overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>${esc(x.n)}</span><div class='t'><div style='width:${x.c/mx*100}%;background:var(--m4)'></div></div><span>${x.c}</span></div>`).join('')}</div>`;
+}
+function cfmsg(s){const e=$('cfs');if(e)e.textContent=L(s)}
+async function syncCF(){
+  const h=S.set.cfh;if(!h){cfmsg('Укажи ник Codeforces в настройках');return}
+  cfmsg('Загружаю…');
+  try{
+    const r=await fetch('https://codeforces.com/api/user.status?handle='+encodeURIComponent(h)),j=await r.json();
+    if(j.status!=='OK')throw new Error(j.comment||'');
+    const have=new Set(S.cf.map(p=>p.id)),subs=j.result.filter(x=>x.verdict==='OK').sort((a,b)=>a.creationTimeSeconds-b.creationTimeSeconds);let n=0;
+    for(const x of subs){const key=x.problem.contestId+x.problem.index,id='cf'+key;if(have.has(id))continue;have.add(id);S.cf.push({id,d:iso(new Date(x.creationTimeSeconds*1000)),p:key+' '+x.problem.name,r:x.problem.rating||0});n++}
+    save();renderCF();cfmsg('Добавлено задач: '+n);
+  }catch(e){cfmsg('Не удалось подключиться к Codeforces. Внутри Claude страница заблокирована, на своём домене должно работать.')}
+}
+let plOpen=false;
+function addFiles(fs){for(const f of fs)M.list.push({n:f.name.split('.').slice(0,-1).join('.')||f.name,u:URL.createObjectURL(f)});if(M.i<0&&M.list.length)playIdx(0);else renderPlayer()}
+function renderPlayer(){
+  const h=$('pl'),has=M.list.length;
+  h.innerHTML=`<div class='pb'>${has?`<div class='pn nt'>${M.i>=0?esc(M.list[M.i].n):'—'}</div><button data-p='pv' aria-label='Назад'>⏮</button><button class='pp' data-p='pp' aria-label='Играть или пауза'>${AU.paused?'▶':'⏸'}</button><button data-p='nx' aria-label='Дальше'>⏭</button><input type='range' id='ppr' min='0' max='${AU.duration||1}' step='1' value='${AU.currentTime||0}' aria-label='Перемотка'><input type='range' id='pvv' min='0' max='1' step='.05' value='${AU.volume}' aria-label='Громкость' style='width:80px'><button data-p='ls' aria-label='Список'>☰</button><button data-p='add' aria-label='Добавить'>＋</button>`:`<button class='pbb' data-p='add'>🎵 Добавить музыку</button>`}<input type='file' id='pfi' accept='audio/*' multiple hidden>${plOpen&&has?`<div class='pls'>${M.list.map((m,i)=>`<button class='trk nt${i===M.i?' on':''}' data-p='t${i}'>${esc(m.n)}</button>`).join('')}</div>`:''}</div>`;
+  i18n(h);
+}
+$('pl').onclick=e=>{const b=e.target.closest('button');if(!b)return;const p=b.dataset.p;
+  if(p==='add')$('pfi').click();
+  else if(p==='pv')mPrev();else if(p==='nx')mNext();
+  else if(p==='pp'){if(M.i<0&&M.list.length)playIdx(0);else if(AU.paused)AU.play().catch(()=>{});else AU.pause()}
+  else if(p==='ls'){plOpen=!plOpen;renderPlayer()}
+  else if(p&&p[0]==='t'){plOpen=false;playIdx(+p.slice(1))}};
+$('pl').onchange=e=>{if(e.target.id==='pfi'){addFiles(e.target.files);e.target.value=''}};
+$('pl').oninput=e=>{if(e.target.id==='ppr')AU.currentTime=+e.target.value;if(e.target.id==='pvv')AU.volume=+e.target.value};
+AU.onplay=AU.onpause=renderPlayer;
+function renderFocus(){
+  const ts=S.tasks.filter(t=>!t.done),td=S.focus.filter(f=>f.d===TODAY),mins=td.reduce((s,f)=>s+f.m,0),f=P.mode==='f',c=f?'--m1':'--m4';
+  if(P.left===null)P.left=dur();
+  $('v-focus').innerHTML=`<div class='fx'><div class='fl'>
+<div class='seg modes'><button data-a='mdf' class='${f?'on':''}'>Фокус</button><button data-a='mdb' class='${f?'':'on'}'>Перерыв</button></div>
+<div class='ring2' style='--c:var(${c})'><svg viewBox='0 0 200 200' aria-hidden='true'><circle cx='100' cy='100' r='90' class='tr2'/><circle cx='100' cy='100' r='90' class='pr2' id='prg' stroke-dasharray='565.5' style='stroke-dashoffset:${(565.5*(1-P.left/dur())).toFixed(1)}'/></svg><div class='ctr'><div class='pt' id='pt'>${fm2(P.left)}</div><div class='pm'>${f?'Фокус':'Перерыв'}</div></div></div>
+<div class='dots' style='--c:var(${c})'>${[0,1,2,3].map(i=>`<i class='${i<P.cyc%4?'on':''}'></i>`).join('')}</div>
+<div class='ctl'><button class='cb' data-a='rs' aria-label='Сброс'>↺</button><button class='cb go' data-a='go' aria-label='Старт или пауза'>${P.run?'⏸':'▶'}</button><button class='cb' data-a='sk' aria-label='Пропустить'>⏭</button></div>
+<select class='in' id='ts'><option value=''>Без задачи</option>${ts.map(t=>`<option value='${t.id}'${t.id===P.task?' selected':''}>${esc(t.t)}</option>`).join('')}</select>
+<div class='durs'><label class='lb2'>Фокус, мин <input class='in w' type='number' min='1' max='120' id='fm' value='${S.set.fm||25}'></label><label class='lb2'>Перерыв, мин <input class='in w' type='number' min='1' max='60' id='bm' value='${S.set.bm||5}'></label></div>
+<div class='kp' style='margin:28px 0 18px;text-align:left'><div><b>${td.length}</b><small>Сессий сегодня</small></div><div><b>${mins}</b><small>Минут фокуса сегодня</small></div></div>
+<button class='btn' data-a='ai'>Отправить итоги дня ИИ</button><div class='st' id='fs'></div></div>
+<div class='sg'><h3>Задачи</h3><div class='add'><input id='tn' class='in' maxlength='80' placeholder='Новая задача'><button data-a='ta'>Добавить</button></div>${S.tasks.map(t=>`<div class='tk'><button class='ck${t.done?' on':''}' data-td='${t.id}'>${t.done?'✓':''}</button><span class='nt${t.done?' dn2':''}'>${esc(t.t)}</span><button class='lnk' data-tx='${t.id}'>×</button></div>`).join('')}</div></div>`;
+  i18n($('v-focus'));
+}
+let tab='days',busy=false;
+const TT={days:'Мои дни',ai:'ИИ',focus:'Фокус',cf:'Codeforces',set:'Настройки'};
+function setTab(t){
+  tab=t;
+  ['days','ai','focus','cf','set'].forEach(x=>{$('v-'+x).hidden=x!==t});
+  document.querySelectorAll('#tb button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  document.querySelector('header .nav').hidden=t!=='days';
+  if(t==='days')all();
+  else{$('yr').textContent='';$('mt').textContent=TT[t];i18n($('mt'));if(t==='ai')renderAI();else if(t==='focus')renderFocus();else if(t==='cf')renderCF();else renderSet()}
+}
+$('tb').onclick=e=>{const b=e.target.closest('[data-t]');if(b)setTab(b.dataset.t)};
+function ctx(){
+  const hn={};S.habits.forEach(h=>hn[h.id]=h.name);
+  const rows=Object.keys(S.days).filter(k=>rec(S.days[k])).sort().slice(-90).map(k=>{const x=S.days[k];return k+' | галочки: '+(x.c.map(c=>hn[c]).filter(Boolean).join(', ')||'нет')+' | настроение: '+(x.m?x.m+'/5':'нет')+' | '+(x.t||'').slice(0,400)});
+  return 'Ты помощник в личном трекере дней. Главная галочка: «'+S.habits[0].name+'». Настроение от 1 (плохо) до 5 (отлично). Сегодня '+TODAY+', выбранный пользователем день: '+sel+'. Отвечай на '+(isEn()?'английском':'русском')+', по-дружески, коротко и по делу, опирайся только на данные ниже, ничего не выдумывай. Если данных мало, так и скажи.'+NL+'Данные (последние записи):'+NL+rows.join(NL);
+}
+function renderAI(){
+  const qs=['Как прошёл выбранный день?','Итоги этого месяца','Что у меня получается лучше всего?','Что мне улучшить?'];
+  $('v-ai').innerHTML=`<div class='aiw'><p class='aih'>Спроси про любой день, неделю или месяц. ИИ видит твои галочки, настроение и описания.</p><div class='chips'>${qs.map(q=>`<button class='chip' data-q='${q}'>${q}</button>`).join('')}</div><div class='chat' id='chat'>${S.chat.map(m=>`<div class='msg ${m.r==='user'?'me':'ai'} nt'>${br(m.c)}</div>`).join('')}</div><div class='send'><textarea id='aq' rows='2' placeholder='Напиши вопрос'></textarea><button class='btn dark' id='as'>Спросить</button></div><div class='st' id='ast'></div><button class='lnk' id='ac'>Очистить чат</button></div>`;
+  i18n($('v-ai'));
+}
+async function ask(q){
+  q=(q||'').trim();if(!q||busy)return;
+  let sm=null;try{sm=await getSM()}catch(e){}
+  if(!sm){$('ast').textContent=L('ИИ недоступен в этом окне. Открой страницу в своём аккаунте Claude.');return}
+  busy=true;
+  const hist=S.chat.slice(-10).map(m=>({role:m.r,content:m.c}));hist.push({role:'user',content:q});
+  while(hist[0].role!=='user')hist.shift();
+  hist[hist.length-1].content=ctx()+NL+NL+'Вопрос: '+q;
+  S.chat.push({r:'user',c:q});const a={r:'assistant',c:''};S.chat.push(a);
+  renderAI();const el=$('chat').lastChild;el.textContent=L('Думаю…');
+  try{const r=await sm(hist,{cache:false,onText:u=>{a.c=u.text;el.innerHTML=br(u.text)}});a.c=r.text||a.c}
+  catch(e){a.c=L('Не удалось получить ответ: ')+((e&&(e.message||e.code))||'')}
+  busy=false;S.chat=S.chat.slice(-30);save();renderAI();
+}
+$('v-ai').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.q)ask(b.dataset.q);else if(b.id==='as')ask($('aq').value);else if(b.id==='ac'){S.chat=[];save();renderAI()}};
+$('v-ai').onkeydown=e=>{if(e.target.id==='aq'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(e.target.value)}};
+function msg(s){const e=$('ss');if(e)e.textContent=L(s)}
+function renderSet(){
+  const s=S.set,sg=(k,v,l)=>`<button data-${k}='${v}' class='${(k==='th'?s.theme:k==='lg'?s.lang:String(s.ws))===String(v)?'on':''}'>${l}</button>`;
+  $('v-set').innerHTML=`<div class='sgs'>
+<div class='sg'><h3>Профиль</h3><div class='pf'><div class='av big'>${s.photo?`<img src='${s.photo}' alt=''>`:esc(Array.from(s.name||'?')[0].toUpperCase())}</div><div class='pfc'><input id='nm' maxlength='30' placeholder='Твоё имя' value='${esc(s.name)}'><div class='bt'><button class='btn' id='phb'>Сменить фото</button>${s.photo?`<button class='btn' id='phx'>Убрать</button>`:''}<input type='file' id='phf' accept='image/*' hidden></div></div></div></div>
+<div class='sg'><h3>Аккаунт</h3><p>${store?'Данные синхронизируются с твоим аккаунтом Claude.':'Облако сейчас недоступно, данные лежат только в этом браузере.'}</p><p>Вход через Google внутри самой страницы сделать нельзя. Вход идёт через твой аккаунт Claude, а в него можно заходить через Gmail.</p><p>ИИ работает через Claude прямо на странице, ключ API не нужен.</p></div>
+<div class='sg'><h3>Галочки</h3><p>+ засчитывается как прокачка и продуктивность, − как деградация. Цвет рамки показывает это в дне, а в статистике есть баланс и отдельный счёт только плюсов.</p>${S.habits.map(h=>`<div class='hk'><span>${esc(h.name)}</span><span class='seg'><button data-hk='${h.id}:good' class='plus ${h.k!=='bad'?'on':''}' aria-label='Плюс'>+</button><button data-hk='${h.id}:bad' class='minus ${h.k==='bad'?'on':''}' aria-label='Минус'>−</button></span></div>`).join('')}</div>
+<div class='sg'><h3>Тема</h3><div class='seg'>${sg('th','auto','Как в системе')}${sg('th','light','Светлая')}${sg('th','dark','Тёмная')}</div></div>
+<div class='sg'><h3>Язык</h3><div class='seg'>${sg('lg','ru','Русский')}${sg('lg','en','English')}</div></div>
+<div class='sg'><h3>Неделя</h3><div class='seg'>${sg('ws','1','С понедельника')}${sg('ws','0','С воскресенья')}</div></div>
+<div class='sg'><h3>Интеграции</h3><p>Ник Codeforces для синхронизации задач.</p><input class='in' id='cfh' maxlength='40' placeholder='Ник Codeforces' value='${esc(s.cfh||'')}' style='width:100%;margin-bottom:14px'><p>Ключ API Anthropic нужен для ИИ, если страница размещена вне Claude. Он хранится только в этом браузере и не попадает в экспорт.</p><input class='in' id='ak' type='password' autocomplete='off' placeholder='sk-ant-…' value='${esc(keyGet())}' style='width:100%'><p style='margin-top:12px'>Spotify и Gmail пока не подключены: для них нужна регистрация приложения и отдельный сервер.</p></div>
+<div class='sg'><h3>Данные</h3><p>Импорт добавляет дни из файла к текущим, одинаковые даты заменяются.</p><div class='bt'><button class='btn' id='ex'>Экспорт JSON</button><button class='btn' id='im'>Импорт JSON</button><button class='btn' id='rs'>Удалить всё</button><input type='file' id='imf' accept='.json,application/json' hidden></div><div class='st' id='ss'></div></div></div>`;
+  i18n($('v-set'));
+}
+function readPhoto(f){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),m=Math.min(im.width,im.height);c.width=c.height=160;c.getContext('2d').drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,160,160);S.set.photo=c.toDataURL('image/jpeg',.82);save();renderSet();renderAv()};im.src=r.result};r.readAsDataURL(f)}
+async function exportJ(){
+  const j=JSON.stringify(S,null,2);
+  try{const d=await claude.use('downloads');if(d){await d.save({filename:'moi-dni-'+TODAY+'.json',data:j});msg('Файл сохранён');return}}catch(e){}
+  if(!window.claude){try{const u=URL.createObjectURL(new Blob([j],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='moi-dni-'+TODAY+'.json';document.body.appendChild(a);a.click();a.remove();msg('Файл сохранён');return}catch(e){}}
+  try{await navigator.clipboard.writeText(j);msg('Скачивание недоступно, JSON скопирован в буфер обмена')}catch(e){msg('Скачивание недоступно')}
+}
+function importJ(f){const r=new FileReader();r.onload=()=>{try{
+  const o=JSON.parse(r.result);if(!o||typeof o.days!=='object')throw 0;
+  const ids=new Set(S.habits.map(h=>h.id));
+  (o.habits||[]).forEach(h=>{if(h&&h.id&&h.name&&!ids.has(h.id))S.habits.push({id:String(h.id),name:String(h.name)})});
+  let n=0;for(const k in o.days){const v=o.days[k];if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&v&&Array.isArray(v.c)){S.days[k]={c:v.c.map(String),m:+v.m||0,t:String(v.t||'')};n++}}
+  save();all();msg('Импортировано дней: '+n)}catch(e){msg('Не получилось прочитать файл, нужен JSON из этого трекера')}};r.readAsText(f)}
+$('v-set').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.id==='phb')$('phf').click();
+  else if(b.id==='phx'){S.set.photo='';save();renderSet();renderAv()}
+  else if(b.dataset.th){S.set.theme=b.dataset.th;applyTheme();save();renderSet()}
+  else if(b.dataset.lg){S.set.lang=b.dataset.lg;applyLang();save();all();renderSet();renderAv();i18n(document.body)}
+  else if(b.dataset.ws!==undefined){S.set.ws=+b.dataset.ws;save();renderSet()}
+  else if(b.dataset.hk){const [id,k]=b.dataset.hk.split(':'),h=S.habits.find(x=>x.id===id);if(h){if(k)h.k=k;else delete h.k;save();renderSet()}}
+  else if(b.id==='ex')exportJ();
+  else if(b.id==='im')$('imf').click();
+  else if(b.id==='rs'){if(!b.dataset.s){b.dataset.s=1;b.textContent=L('Точно удалить? Нажми ещё раз')}else{S.days={};S.habits=[{id:'p',name:'Продуктивный день'}];S.chat=[];S.tasks=[];S.focus=[];S.cf=[];save();all();renderSet();msg('Все данные удалены')}}};
+$('v-set').oninput=e=>{if(e.target.id==='cfh'){S.set.cfh=e.target.value.trim();save()}if(e.target.id==='ak')keySet(e.target.value.trim());if(e.target.id==='nm'){S.set.name=e.target.value;renderAv();save()}};
+$('v-set').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;if(e.target.id==='phf')readPhoto(f);if(e.target.id==='imf')importJ(f);e.target.value=''};
+$('cal').onclick=e=>{const b=e.target.closest('[data-k]');if(b){sel=b.dataset.k;renderCal();renderEd();if(innerWidth<860)$('ed').scrollIntoView({behavior:'smooth'})}};
+$('ed').onclick=e=>{
+  const del=e.target.closest('[data-del]');
+  if(del){const id=del.dataset.del;S.habits=S.habits.filter(x=>x.id!==id);Object.values(S.days).forEach(d=>d.c=d.c.filter(c=>c!==id));all();save();return}
+  const hb=e.target.closest('[data-h]');
+  if(hb){const x=day(sel),id=hb.dataset.h;x.c=x.c.includes(id)?x.c.filter(c=>c!==id):[...x.c,id];all();save();return}
+  const m=e.target.closest('[data-m]');
+  if(m){const x=day(sel),v=+m.dataset.m;x.m=x.m===v?0:v;all();save();return}
+  if(e.target.id==='ah')addHab();
+};
+$('ed').onkeydown=e=>{
+  if(e.target.id==='nh'&&e.key==='Enter')addHab();
+  if(e.target.dataset&&e.target.dataset.h&&(e.key===' '||e.key==='Enter')){e.preventDefault();e.target.click()}
+};
+$('ed').oninput=e=>{if(e.target.id==='tx'){day(sel).t=e.target.value;renderCal();save()}};
+function addHab(){const v=$('nh').value.trim();if(!v)return;S.habits.push({id:'h'+Date.now().toString(36),name:v});all();save()}
+document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;range=b.dataset.r;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));renderStats()};
+$('prev').onclick=()=>{view.m--;if(view.m<0){view.m=11;view.y--}renderCal();renderStats()};
+$('next').onclick=()=>{view.m++;if(view.m>11){view.m=0;view.y++}renderCal();renderStats()};
+$('tod').onclick=()=>{view={y:now.getFullYear(),m:now.getMonth()};sel=TODAY;all()};
+load().then(()=>{S.set=Object.assign({name:'',photo:'',theme:'auto',lang:'ru',ws:1},S.set||{});S.chat=S.chat||[];S.tasks=S.tasks||[];S.focus=S.focus||[];S.cf=S.cf||[];applyTheme();applyLang();renderAv();renderPlayer();all();i18n(document.body)});
+</script>
+</body>
 </html>
