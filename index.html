@@ -684,6 +684,17 @@ async function lookupCover(track){
       }catch(e){}
     }
   }
+  // Last fallback: Google Images via the server-side Custom Search endpoint.
+  if(!found){
+    const query=[left,right].filter(Boolean).join(' ')||parsed.query||track.n;
+    try{
+      const response=await fetch('/api/cover?q='+encodeURIComponent(query));
+      if(response.ok){
+        const data=await response.json();
+        if(data.image)found={art:data.image,artist:track.artist||'',album:track.album||''};
+      }
+    }catch(e){}
+  }
   if(found){
     track.art=found.art;track.artist=found.artist;track.album=found.album;track.artChecked=true;
     const saved=await idbGet(track.id);
