@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Мои дни</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2064%2064%27%3E%3Crect%20width%3D%2764%27%20height%3D%2764%27%20rx%3D%2716%27%20fill%3D%27%231b1030%27/%3E%3Crect%20x%3D%2710%27%20y%3D%2710%27%20width%3D%2720%27%20height%3D%2720%27%20rx%3D%276%27%20fill%3D%27%23ff5d73%27/%3E%3Crect%20x%3D%2734%27%20y%3D%2710%27%20width%3D%2720%27%20height%3D%2720%27%20rx%3D%276%27%20fill%3D%27%23ffd84d%27/%3E%3Crect%20x%3D%2710%27%20y%3D%2734%27%20width%3D%2720%27%20height%3D%2720%27%20rx%3D%276%27%20fill%3D%27%234dc9ff%27/%3E%3Crect%20x%3D%2734%27%20y%3D%2734%27%20width%3D%2720%27%20height%3D%2720%27%20rx%3D%276%27%20fill%3D%27%236fdc8c%27/%3E%3Cpath%20d%3D%27M39%2045l5%205%209-10%27%20fill%3D%27none%27%20stroke%3D%27%231b1030%27%20stroke-width%3D%274%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27/%3E%3C/svg%3E"><meta name="theme-color" content="#1b1030">
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f6f0ff;--surf:#ffffff;--ink:#1b1030;--mute:#7a6c96;--line:#e0d4f5;
@@ -177,6 +178,9 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:8px 0}
 .seg button.plus.on{background:var(--m4);color:#1b1030;border-color:var(--m4)}
 .seg button.minus.on{background:var(--m1);color:#1b1030;border-color:var(--m1)}
 .hk .seg button{min-width:44px;font-weight:700;font-size:16px}
+.logo{display:flex;margin-right:10px}.logo svg{width:42px;height:42px;border-radius:13px}
+.mn{margin-top:40px;max-width:640px}.mn summary{cursor:pointer;color:var(--mute);font-weight:500}.mn p{color:var(--mute);font-size:14px}
+.tk small{color:var(--mute);font-size:13px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -190,7 +194,7 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:8px 0}
       <button class="ib" id="next" aria-label="Следующий месяц">›</button>
     </div>
   </header>
-  <nav class='tb' id='tb'><button class='on' data-t='days'>Дни</button><button data-t='ai'>ИИ</button><button data-t='focus'>Фокус</button><button data-t='cf'>Codeforces</button><button data-t='set'>Настройки</button><span class='av' id='avs' data-t='set' role='button' aria-label='Настройки'></span></nav>
+  <nav class='tb' id='tb'><span class='logo' role='img' aria-label='Мои дни'><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='#1b1030'/><rect x='10' y='10' width='20' height='20' rx='6' fill='#ff5d73'/><rect x='34' y='10' width='20' height='20' rx='6' fill='#ffd84d'/><rect x='10' y='34' width='20' height='20' rx='6' fill='#4dc9ff'/><rect x='34' y='34' width='20' height='20' rx='6' fill='#6fdc8c'/><path d='M39 45l5 5 9-10' fill='none' stroke='#1b1030' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/></svg></span><button class='on' data-t='days'>Дни</button><button data-t='ai'>ИИ</button><button data-t='focus'>Фокус</button><button data-t='cf'>Codeforces</button><button data-t='set'>Настройки</button><span class='av' id='avs' data-t='set' role='button' aria-label='Настройки'></span></nav>
   <div id='v-days'><div class="main">
     <div><div class="cal" id="cal"></div><p class="note">Цвет клетки — настроение, кружок с галочкой — продуктивный день.</p></div>
     <div class="ed" id="ed"></div>
@@ -453,26 +457,45 @@ $('v-focus').onchange=e=>{const t=e.target;
 };
 $('v-focus').oninput=e=>{if(e.target.id==='mpr')AU.currentTime=+e.target.value;if(e.target.id==='mv')AU.volume=+e.target.value};
 $('v-focus').onkeydown=e=>{if(e.target.id==='tn'&&e.key==='Enter')addTask()};
+T.push(...`Принято|Accepted~Неверный ответ|Wrong answer~Лимит времени|Time limit~Ошибка выполнения|Runtime error~Лимит памяти|Memory limit~Ошибка компиляции|Compilation error~Контесты|Contests~Gym и сборы|Gym~Группы (вручную)|Groups (manual)~Ночь (0–6)|Night (0–6)~Утро (6–12)|Morning (6–12)~День (12–18)|Day (12–18)~Вечер (18–24)|Evening (18–24)~Решено с первой попытки|Solved first try~Среднее число попыток|Average attempts~Принято из всех посылок|Acceptance rate~Всего посылок|Total submissions~Темы задач|Problem tags~Языки|Languages~Сколько попыток нужно|Attempts needed~Все посылки по вердиктам|All submissions by verdict~Откуда задачи|Where from~Время суток|Time of day`.split('~').map(l=>l.split('|')));T.sort((a,b)=>b[0].length-a[0].length);
+const cfLang=s=>/C\+\+/.test(s)?'C++':/PyPy|Python/.test(s)?'Python':/Kotlin/.test(s)?'Kotlin':/Java\b|Java \d/.test(s)?'Java':/Rust/.test(s)?'Rust':/Go\b/.test(s)?'Go':/C#|Mono/.test(s)?'C#':((s||'').split(' ')[0]||'?');
 function renderCF(){
-  const byD={};S.cf.forEach(p=>byD[p.d]=(byD[p.d]||0)+1);
+  const cf=S.cf,byD={};cf.forEach(p=>byD[p.d]=(byD[p.d]||0)+1);
   const dd=d=>iso(new Date(now.getFullYear(),now.getMonth(),now.getDate()-d));
   const last=n=>{let c=0;for(let i=0;i<n;i++)c+=byD[dd(i)]||0;return c};
-  const rs=S.cf.map(p=>p.r).filter(Boolean),mon=S.cf.filter(p=>p.d.slice(0,7)===TODAY.slice(0,7)).length;
+  const rs=cf.map(p=>p.r).filter(Boolean),mon=cf.filter(p=>p.d.slice(0,7)===TODAY.slice(0,7)).length;
   let st=0,i=byD[TODAY]?0:1;while(byD[dd(i)]){st++;i++}
-  const bk={};rs.forEach(r=>{const b=Math.floor(r/100)*100;bk[b]=(bk[b]||0)+1});
-  const bs=Object.keys(bk).map(Number).sort((a,b)=>a-b),mx=Math.max(1,...bs.map(b=>bk[b]));
+  const wa=cf.filter(p=>p.at),first=wa.filter(p=>p.at===1).length,vd=S.cfv||{},sub=S.cfsub||0;
+  const cnt=(arr,f)=>{const m={};arr.forEach(p=>{const k=f(p);(Array.isArray(k)?k:[k]).forEach(x=>{if(x!==null&&x!==undefined)m[x]=(m[x]||0)+1})});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+  const rowsH=(arr,col,w)=>{const mx=Math.max(1,...arr.map(a=>a[1]));return arr.map(([k,v])=>`<div class='row' style='grid-template-columns:${w||'120px'} 1fr 38px'><span class='nt' style='overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>${esc(k)}</span><div class='t'><div style='width:${v/mx*100}%;background:${col}'></div></div><span>${v}</span></div>`).join('')||'—'};
+  const kp=(v,l)=>`<div><b>${v}</b><small>${l}</small></div>`;
+  const VR={OK:'Принято',WRONG_ANSWER:'Неверный ответ',TIME_LIMIT_EXCEEDED:'Лимит времени',RUNTIME_ERROR:'Ошибка выполнения',MEMORY_LIMIT_EXCEEDED:'Лимит памяти',COMPILATION_ERROR:'Ошибка компиляции'};
+  const TY={contest:'Контесты',gym:'Gym и сборы',group:'Группы (вручную)'};
   const bars=[];for(let j=13;j>=0;j--)bars.push(byD[dd(j)]||0);const bm=Math.max(1,...bars);
-  const rec2=[...S.cf].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,15);
-  $('v-cf').innerHTML=`<div class='sgs'><div class='sg'><h3>Решил задачу</h3><p>Ник Codeforces указывается в настройках. Автосинхронизация работает, когда страница размещена на своём домене, например на Vercel. Внутри Claude запросы блокируются, там задачи добавляются вручную.</p><div class='pfc'><input id='cn' class='in' style='width:100%;margin-bottom:10px' maxlength='40' placeholder='Задача, например 1850A'><div class='bt'><input id='cr' class='in w' type='number' placeholder='Рейтинг' min='0' max='4000' step='100'><input id='cd' class='in' type='date' value='${TODAY}'><button class='btn dark' data-c='add'>Добавить</button></div></div><button class='btn' data-c='sync' style='margin-top:12px'>Синхронизировать с Codeforces</button><div class='st' id='cfs'></div></div></div>
-<div class='kp' style='margin:34px 0'><div><b>${S.cf.length}</b><small>Всего решено</small></div><div><b>${byD[TODAY]||0}</b><small>Решено сегодня</small></div><div><b>${last(7)}</b><small>За 7 дней</small></div><div><b>${mon}</b><small>За месяц</small></div><div><b>${rs.length?Math.round(rs.reduce((a,b)=>a+b,0)/rs.length):'—'}</b><small>Средний рейтинг</small></div><div><b>${rs.length?Math.max(...rs):'—'}</b><small>Макс. рейтинг</small></div><div><b>${st}</b><small>Серия дней</small></div><div><b>${Math.max(0,...Object.values(byD))}</b><small>Рекорд за день</small></div></div>
-<div class='blocks'><div class='blk'><h3>Решённые задачи по рейтингу</h3><p class='s'>Сколько задач в каждой сотне</p>${bs.map(b=>`<div class='row' style='grid-template-columns:48px 1fr 34px'><span>${b}</span><div class='t'><div style='width:${bk[b]/mx*100}%;background:var(--m5)'></div></div><span>${bk[b]}</span></div>`).join('')||'—'}</div>
+  const at=[1,2,3].map(n=>[n+(n===1?' попытка':' попытки'),wa.filter(p=>p.at===n).length]).concat([['4 и больше',wa.filter(p=>p.at>=4).length]]);
+  const rec2=[...cf].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,20);
+  $('v-cf').innerHTML=`<div class='sgs'><div class='sg'><h3>Codeforces</h3><p>Синхронизация подтягивает все решённые задачи вместе с темами, языком и числом попыток.</p><input class='in' id='cfh2' maxlength='40' placeholder='Ник Codeforces' value='${esc(S.set.cfh||'')}' style='width:100%;margin-bottom:12px'><button class='btn dark' data-c='sync'>Синхронизировать с Codeforces</button><div class='st' id='cfs'></div></div></div>
+<div class='kp' style='margin:34px 0'>${kp(cf.length,'Всего решено')}${kp(byD[TODAY]||0,'Решено сегодня')}${kp(last(7),'За 7 дней')}${kp(mon,'За месяц')}${kp(rs.length?Math.round(rs.reduce((a,b)=>a+b,0)/rs.length):'—','Средний рейтинг')}${kp(rs.length?Math.max(...rs):'—','Макс. рейтинг')}${kp(st,'Серия дней')}${kp(Math.max(0,...Object.values(byD)),'Рекорд за день')}${kp(wa.length?Math.round(first/wa.length*100)+'%':'—','Решено с первой попытки')}${kp(wa.length?(wa.reduce((s,p)=>s+p.at,0)/wa.length).toFixed(1):'—','Среднее число попыток')}${kp(sub||'—','Всего посылок')}${kp(sub?Math.round((vd.OK||0)/sub*100)+'%':'—','Принято из всех посылок')}</div>
+<div class='blocks'>
+<div class='blk'><h3>Решённые задачи по рейтингу</h3><p class='s'>Сколько задач в каждой сотне</p>${rowsH(cnt(cf.filter(p=>p.r),p=>Math.floor(p.r/100)*100).sort((a,b)=>a[0]-b[0]),'var(--m5)','56px')}</div>
+<div class='blk'><h3>Темы задач</h3><p class='s'>Что решаешь чаще всего</p>${rowsH(cnt(cf,p=>p.tg||[]).slice(0,10),'var(--m4)','140px')}</div>
+<div class='blk'><h3>Языки</h3><p class='s'>На чём принято решение</p>${rowsH(cnt(cf.filter(p=>p.lg),p=>cfLang(p.lg)).slice(0,6),'var(--m3)')}</div>
+<div class='blk'><h3>Сколько попыток нужно</h3><p class='s'>Сколько посылок ушло до первого принятия</p>${rowsH(at,'var(--m2)')}</div>
+<div class='blk'><h3>Все посылки по вердиктам</h3><p class='s'>Включая неудачные</p>${rowsH(Object.entries(vd).sort((a,b)=>b[1]-a[1]).slice(0,7).map(([k,v])=>[VR[k]||k,v]),'var(--m1)','150px')}</div>
+<div class='blk'><h3>Откуда задачи</h3><p class='s'>Контесты, gym и группы</p>${rowsH(cnt(cf,p=>TY[p.ty||'contest']),'var(--m5)','150px')}</div>
+<div class='blk'><h3>Время суток</h3><p class='s'>Когда ты чаще всего решаешь</p>${rowsH(cnt(cf.filter(p=>p.h!==undefined),p=>p.h<6?'Ночь (0–6)':p.h<12?'Утро (6–12)':p.h<18?'День (12–18)':'Вечер (18–24)'),'var(--m2)','130px')}</div>
 <div class='blk'><h3>Решено за 14 дней</h3><p class='s'>Справа сегодня</p><div class='bars'>${bars.map(c=>c?`<div style='height:${c/bm*100}%;background:var(--m5)' title='${c}'></div>`:`<div class='n' style='height:5px'></div>`).join('')}</div></div>
-<div class='blk'><h3>Последние задачи</h3><p class='s'> </p>${rec2.map(p=>`<div class='tk nt'><span>${esc(p.p)}${p.r?' · '+p.r:''}</span><span style='flex:none;color:var(--mute)'>${p.d}</span><button class='lnk' data-cx='${p.id}'>×</button></div>`).join('')||'—'}</div></div>`;
+<div class='blk'><h3>Последние решённые</h3><p class='s'> </p>${rec2.map(p=>`<div class='tk nt'><span><b>${esc(p.p)}</b>${p.r?' · '+p.r:''}<br><small>${esc((p.tg||[]).slice(0,3).join(', '))}${p.lg?' · '+esc(cfLang(p.lg)):''}${p.at?' · '+p.at+' поп.':''}</small></span><span style='flex:none;color:var(--mute);font-size:13px'>${p.d}</span><button class='lnk' data-cx='${p.id}'>×</button></div>`).join('')||'—'}</div>
+</div>
+<details class='mn'><summary>Добавить задачу из группы вручную</summary><p>Если какие-то групповые контесты не подтянулись автоматически, добавь задачу здесь.</p><div class='bt'><input id='cn' class='in' maxlength='60' placeholder='Задача'><input id='cr' class='in w' type='number' placeholder='Рейтинг' min='0' max='4000' step='100'><input id='cd' class='in' type='date' value='${TODAY}'><button class='btn dark' data-c='add'>Добавить</button></div></details>`;
   i18n($('v-cf'));
 }
 $('v-cf').onclick=e=>{const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.c==='add'){const n=$('cn').value.trim();if(!n)return;S.cf.push({id:'c'+Date.now().toString(36),d:$('cd').value||TODAY,p:n,r:+$('cr').value||0});save();renderCF()}
-  else if(b.dataset.c==='sync')syncCF();else if(b.dataset.cx){S.cf=S.cf.filter(p=>p.id!==b.dataset.cx);save();renderCF()}};
+  if(b.dataset.c==='sync')syncCF();
+  else if(b.dataset.c==='add'){const n=$('cn').value.trim();if(!n)return;S.cf.push({id:'c'+Date.now().toString(36),d:$('cd').value||TODAY,p:n,r:+$('cr').value||0,ty:'group',tg:[],at:0});save();renderCF()}
+  else if(b.dataset.cx){S.cf=S.cf.filter(p=>p.id!==b.dataset.cx);save();renderCF()}};
+$('v-cf').oninput=e=>{if(e.target.id==='cfh2'){S.set.cfh=e.target.value.trim();save()}};
+
 T.push(...`Добавить музыку|Add music~Прокачка (только плюсы)|Growth (pluses only)~Деградация (минусы)|Decline (minuses)~Баланс|Balance~Прокачка: только плюсы|Growth: pluses only~Минусы здесь не считаются, видно только что ты развивал|Minuses are ignored here, you see only what you built up~Интеграции|Integrations~Ник Codeforces|Codeforces handle~Синхронизировать с Codeforces|Sync with Codeforces~Добавлено задач: |Problems added: ~Загружаю…|Loading…~Укажи ник Codeforces в настройках|Set your Codeforces handle in settings`.split('~').map(l=>l.split('|')));T.sort((a,b)=>b[0].length-a[0].length);
 const keyGet=()=>{try{return localStorage.getItem('moi-dni-key')||''}catch(e){return ''}};
 const keySet=v=>{try{if(v)localStorage.setItem('moi-dni-key',v);else localStorage.removeItem('moi-dni-key')}catch(e){}};
@@ -497,11 +520,22 @@ async function syncCF(){
   try{
     const r=await fetch('https://codeforces.com/api/user.status?handle='+encodeURIComponent(h)),j=await r.json();
     if(j.status!=='OK')throw new Error(j.comment||'');
-    const have=new Set(S.cf.map(p=>p.id)),subs=j.result.filter(x=>x.verdict==='OK').sort((a,b)=>a.creationTimeSeconds-b.creationTimeSeconds);let n=0;
-    for(const x of subs){const key=x.problem.contestId+x.problem.index,id='cf'+key;if(have.has(id))continue;have.add(id);S.cf.push({id,d:iso(new Date(x.creationTimeSeconds*1000)),p:key+' '+x.problem.name,r:x.problem.rating||0});n++}
-    save();renderCF();cfmsg('Добавлено задач: '+n);
+    const subs=j.result.slice().sort((a,b)=>a.creationTimeSeconds-b.creationTimeSeconds),att={},seen=new Set(),vd={};let n=0;
+    for(const x of subs){
+      const v=x.verdict||'?';vd[v]=(vd[v]||0)+1;
+      const key=x.problem.contestId+x.problem.index;
+      if(seen.has(key))continue;
+      if(x.verdict!=='OK'){att[key]=(att[key]||0)+1;continue}
+      seen.add(key);
+      const t=new Date(x.creationTimeSeconds*1000),id='cf'+key;
+      const e={id,d:iso(t),h:t.getHours(),p:key+' '+x.problem.name,r:x.problem.rating||0,tg:x.problem.tags||[],lg:x.programmingLanguage||'',at:(att[key]||0)+1,ty:x.problem.contestId>=100000?'gym':'contest'};
+      const have=S.cf.find(p=>p.id===id);
+      if(have)Object.assign(have,e);else{S.cf.push(e);n++}
+    }
+    S.cfv=vd;S.cfsub=subs.length;save();renderCF();cfmsg('Добавлено задач: '+n);
   }catch(e){cfmsg('Не удалось подключиться к Codeforces. Внутри Claude страница заблокирована, на своём домене должно работать.')}
 }
+
 let plOpen=false;
 function addFiles(fs){for(const f of fs)M.list.push({n:f.name.split('.').slice(0,-1).join('.')||f.name,u:URL.createObjectURL(f)});if(M.i<0&&M.list.length)playIdx(0);else renderPlayer()}
 function renderPlayer(){
@@ -632,6 +666,5 @@ $('next').onclick=()=>{view.m++;if(view.m>11){view.m=0;view.y++}renderCal();rend
 $('tod').onclick=()=>{view={y:now.getFullYear(),m:now.getMonth()};sel=TODAY;all()};
 load().then(()=>{S.set=Object.assign({name:'',photo:'',theme:'auto',lang:'ru',ws:1},S.set||{});S.chat=S.chat||[];S.tasks=S.tasks||[];S.focus=S.focus||[];S.cf=S.cf||[];applyTheme();applyLang();renderAv();renderPlayer();all();i18n(document.body)});
 </script>
-<script src="sync.js"></script>
 </body>
 </html>
