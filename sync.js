@@ -97,7 +97,12 @@
   let tbusy = false;
   const b64 = b => new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result.split(',')[1]); f.readAsDataURL(b); });
   const cid = i => String(i).padStart(4, '0');
-  const tmsg = s => { trkMsg = s; renderPlayer(); };
+  const tmsg = s => { trkMsg = s; if (!s) trkProgress = null; renderPlayer(); };
+  const tprogress = (name, percent, label) => {
+    trkProgress = { name, percent: Math.max(0, Math.min(100, percent)), label };
+    trkMsg = label;
+    renderPlayer();
+  };
   async function trackSync() {
     if (!user || tbusy) return;
     tbusy = true;
@@ -116,8 +121,11 @@
         } else {
           const n = Math.ceil(o.blob.size / CH);
           for (let i = 0; i < n; i++) {
-            tmsg(tt('Загрузка в облако: ', 'Uploading: ') + o.name + ' ' + (i + 1) + '/' + n);
-            await setDoc(doc(db, 'trackers', user.uid, 'tracks', o.id, 'c', cid(i)), { d: await b64(o.blob.slice(i * CH, (i + 1) * CH)) });
+            const label = tt('Загрузка в облако', 'Uploading to cloud') + ' · ' + (i + 1) + '/' + n;
+            tprogress(o.name, i / n * 100, label);
+            const encoded = await b64(o.blob.slice(i * CH, (i + 1) * CH));
+            await setDoc(doc(db, 'trackers', user.uid, 'tracks', o.id, 'c', cid(i)), { d: encoded });
+            tprogress(o.name, (i + 1) / n * 100, label);
           }
           await setDoc(doc(db, 'trackers', user.uid, 'tracks', o.id), { name: o.name, size: o.size, type: o.type, n, ts: o.ts });
           o.cloud = true; await idbPut(o);
@@ -128,11 +136,13 @@
         if (lids.has(id)) continue;
         const m = cloud[id], parts = [];
         for (let i = 0; i < m.n; i++) {
-          tmsg(tt('Загрузка из облака: ', 'Downloading: ') + m.name + ' ' + (i + 1) + '/' + m.n);
+          const label = tt('Загрузка из облака', 'Downloading from cloud') + ' · ' + (i + 1) + '/' + m.n;
+          tprogress(m.name, i / m.n * 100, label);
           const s = await getDoc(doc(db, 'trackers', user.uid, 'tracks', id, 'c', cid(i)));
           const bin = atob(s.data().d), u = new Uint8Array(bin.length);
           for (let j = 0; j < bin.length; j++) u[j] = bin.charCodeAt(j);
           parts.push(u);
+          tprogress(m.name, (i + 1) / m.n * 100, label);
         }
         const o = { id, name: m.name, size: m.size, type: m.type, blob: new Blob(parts, { type: m.type }), cloud: true, ts: m.ts };
         await idbPut(o); M.list.push(mk(o));
