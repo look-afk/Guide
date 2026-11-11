@@ -632,5 +632,6 @@ $('next').onclick=()=>{view.m++;if(view.m>11){view.m=0;view.y++}renderCal();rend
 $('tod').onclick=()=>{view={y:now.getFullYear(),m:now.getMonth()};sel=TODAY;all()};
 load().then(()=>{S.set=Object.assign({name:'',photo:'',theme:'auto',lang:'ru',ws:1},S.set||{});S.chat=S.chat||[];S.tasks=S.tasks||[];S.focus=S.focus||[];S.cf=S.cf||[];applyTheme();applyLang();renderAv();renderPlayer();all();i18n(document.body)});
 </script>
+<script src="sync.js"></script>
 </body>
 </html>
