@@ -23,6 +23,10 @@
     if (c === 'auth/popup-blocked') return tt('Браузер заблокировал окно входа. Разреши всплывающие окна для сайта.', 'The browser blocked the sign-in popup. Allow popups for this site.');
     if (c === 'auth/popup-closed-by-user' || c === 'auth/cancelled-popup-request') return '';
     if (c === 'permission-denied') return tt('Нет доступа к базе. Проверь правила Firestore.', 'Access denied. Check the Firestore rules.');
+    if (c === 'storage/unauthorized') return tt('Firebase Storage запретил загрузку. Проверь Storage Rules.', 'Firebase Storage denied the upload. Check Storage Rules.');
+    if (c === 'storage/bucket-not-found' || c === 'storage/no-default-bucket') return tt('Firebase Storage не настроен: проверь Storage bucket в Firebase Console.', 'Firebase Storage is not configured. Check the Storage bucket in Firebase Console.');
+    if (c === 'storage/quota-exceeded') return tt('Закончилась квота Firebase Storage.', 'Firebase Storage quota exceeded.');
+    if (c === 'storage/canceled') return tt('Загрузка отменена.', 'Upload canceled.');
     return tt('Ошибка: ', 'Error: ') + (c || (e && e.message) || '');
   }
 
@@ -193,7 +197,7 @@
   window.onTrackRemove = async id => {
     if (!user) return;
     try {
-      const { collection, getDocs, deleteDoc, doc } = fb.F;
+      const { collection, getDocs, getDoc, deleteDoc, doc } = fb.F;
       const { ref, deleteObject } = fb.St;
       const meta = await getDoc(doc(db, 'trackers', user.uid, 'tracks', id));
       if (meta.exists() && meta.data().storagePath) {
