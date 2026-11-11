@@ -502,6 +502,11 @@ const keySet=v=>{try{if(v)localStorage.setItem('moi-dni-key',v);else localStorag
 async function getSM(){
   try{const s=await claude.use('sample');if(s)return s}catch(e){}
   const k=keyGet();if(!k)return null;
+  if(!k.startsWith('sk-ant-'))return async msgs=>{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':k},body:JSON.stringify({contents:msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}))})});
+    const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
+    return {text:((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(x=>x.text||'').join('')};
+  };
   return async msgs=>{
     const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:1000,messages:msgs})});
     const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
@@ -615,7 +620,7 @@ function renderSet(){
 <div class='sg'><h3>Тема</h3><div class='seg'>${sg('th','auto','Как в системе')}${sg('th','light','Светлая')}${sg('th','dark','Тёмная')}</div></div>
 <div class='sg'><h3>Язык</h3><div class='seg'>${sg('lg','ru','Русский')}${sg('lg','en','English')}</div></div>
 <div class='sg'><h3>Неделя</h3><div class='seg'>${sg('ws','1','С понедельника')}${sg('ws','0','С воскресенья')}</div></div>
-<div class='sg'><h3>Интеграции</h3><p>Ник Codeforces для синхронизации задач.</p><input class='in' id='cfh' maxlength='40' placeholder='Ник Codeforces' value='${esc(s.cfh||'')}' style='width:100%;margin-bottom:14px'><p>Ключ API Anthropic нужен для ИИ, если страница размещена вне Claude. Он хранится только в этом браузере и не попадает в экспорт.</p><input class='in' id='ak' type='password' autocomplete='off' placeholder='sk-ant-…' value='${esc(keyGet())}' style='width:100%'><p style='margin-top:12px'>Spotify и Gmail пока не подключены: для них нужна регистрация приложения и отдельный сервер.</p></div>
+<div class='sg'><h3>Интеграции</h3><p>Ник Codeforces для синхронизации задач.</p><input class='in' id='cfh' maxlength='40' placeholder='Ник Codeforces' value='${esc(s.cfh||'')}' style='width:100%;margin-bottom:14px'><p>Ключ для ИИ нужен, если страница размещена вне Claude. Подойдёт ключ Gemini из Google AI Studio или ключ Anthropic (sk-ant-…). Он хранится только в этом браузере и не попадает в экспорт.</p><input class='in' id='ak' type='password' autocomplete='off' placeholder='Ключ Gemini или sk-ant-…' value='${esc(keyGet())}' style='width:100%'><p style='margin-top:12px'>Spotify и Gmail пока не подключены: для них нужна регистрация приложения и отдельный сервер.</p></div>
 <div class='sg'><h3>Данные</h3><p>Импорт добавляет дни из файла к текущим, одинаковые даты заменяются.</p><div class='bt'><button class='btn' id='ex'>Экспорт JSON</button><button class='btn' id='im'>Импорт JSON</button><button class='btn' id='rs'>Удалить всё</button><input type='file' id='imf' accept='.json,application/json' hidden></div><div class='st' id='ss'></div></div></div>`;
   i18n($('v-set'));
 }
