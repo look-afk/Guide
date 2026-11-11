@@ -225,6 +225,12 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:8px 0}
 .player-empty{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .player-empty .pbb{height:42px;padding:0 18px;border:0;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:600}
 .player-empty .ph{font-size:13px;color:var(--mute)}
+.cloud-progress{margin-top:12px;padding:11px 13px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.cloud-progress-head{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px;color:var(--mute)}
+.cloud-progress-head strong{color:var(--ink);font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cloud-progress-track{height:7px;margin-top:9px;border-radius:99px;overflow:hidden;background:var(--line)}
+.cloud-progress-fill{height:100%;width:0;border-radius:99px;background:var(--m1);transition:width .2s ease}
+.cloud-progress-note{margin-top:6px;font-size:11px;color:var(--mute)}
 .queue-list{max-height:260px;overflow-y:auto;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:6px;margin-top:14px}
 .queue-row{display:flex;align-items:center;gap:8px;min-height:58px;padding:4px 6px;border-radius:12px}
 .queue-row.active{background:var(--surf)}
@@ -594,7 +600,7 @@ async function syncCF(){
 }
 
 T.push(...`или перетащи файлы сюда|or drop files here~Выбери трек|Pick a track~ треков| tracks~ МБ| MB~Добавить музыку|Add music~Загрузи аудиофайлы или перетащи их сюда|Upload audio files or drag them here~Локальная музыка|Local audio~Неизвестный исполнитель|Unknown artist`.split('~').map(l=>l.split('|')));T.sort((a,b)=>b[0].length-a[0].length);
-let plOpen=false,trkMsg='';
+let plOpen=false,trkMsg='',trkProgress=null;
 const idb=()=>new Promise((res,rej)=>{try{const r=indexedDB.open('moi-dni-tracks',1);r.onupgradeneeded=()=>r.result.createObjectStore('t',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
 async function idbAll(){try{const d=await idb();return await new Promise(res=>{const q=d.transaction('t').objectStore('t').getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([])})}catch(e){return []}}
 async function idbPut(o){try{const d=await idb();return await new Promise(res=>{const t=d.transaction('t','readwrite');t.objectStore('t').put(o);t.oncomplete=()=>res(true);t.onerror=()=>res(false)})}catch(e){return false}}
@@ -608,25 +614,49 @@ function parseTrackName(name){
   return parts.length>1?{artist:parts[0].trim(),title:parts.slice(1).join(' - ').trim(),query:clean}:{artist:'',title:clean,query:clean};
 }
 async function lookupCover(track){
-  if(!track||track.art||track.artChecked)return;
-  track.artChecked=true;
-  const parsed=parseTrackName(track.n),term=parsed.query;
-  if(!term)return;
-  try{
-    const url='https://itunes.apple.com/search?term='+encodeURIComponent(term)+'&entity=song&limit=8&media=music';
-    const response=await fetch(url);
-    if(!response.ok)throw new Error('Artwork search failed');
-    const data=await response.json(),items=data.results||[];
-    const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9а-яё]+/gi,' ').trim();
-    const wanted=norm(parsed.title),found=items.find(x=>norm(x.trackName)===wanted)||items[0];
-    if(found&&found.artworkUrl100){
-      track.art=found.artworkUrl100.replace('100x100bb','600x600bb');
-      track.artist=found.artistName||parsed.artist||'';
-      track.album=found.collectionName||'';
-      const saved=await idbGet(track.id);
-      if(saved)await idbPut({...saved,art:track.art,artist:track.artist,album:track.album});
+  if(!track||track.art||track.artLoading)return;
+  const parsed=parseTrackName(track.n),norm=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9а-яё]+/gi,' ').trim();
+  const title=parsed.title||parsed.query,artist=parsed.artist;
+  if(!title)return;
+  track.artLoading=true;
+  const queries=[artist?artist+' '+title:'',title,parsed.query].filter((v,i,a)=>v&&a.indexOf(v)===i);
+  let found=null;
+  const score=(x)=>{
+    const tn=norm(x.trackName||x.title),an=norm(x.artistName||x.artist?.name);
+    let n=0;
+    if(tn===norm(title))n+=10;else if(tn.includes(norm(title))||norm(title).includes(tn))n+=5;
+    if(artist&&an===norm(artist))n+=8;else if(artist&&an.includes(norm(artist)))n+=4;
+    return n;
+  };
+  // iTunes: retry with artist+title, title-only and the original filename.
+  for(const term of queries){
+    try{
+      const url='https://itunes.apple.com/search?term='+encodeURIComponent(term)+'&entity=song&limit=15&media=music';
+      const response=await fetch(url);
+      if(!response.ok)continue;
+      const data=await response.json(),items=data.results||[];
+      const best=items.filter(x=>x.artworkUrl100).sort((a,b)=>score(b)-score(a))[0];
+      if(best){found={art:best.artworkUrl100.replace(/\\d+x\\d+bb/,'600x600bb'),artist:best.artistName||artist||'',album:best.collectionName||''};break;}
+    }catch(e){}
+  }
+  // Deezer fallback when Apple's catalogue has no usable match or is unavailable.
+  if(!found){
+    for(const term of queries){
+      try{
+        const response=await fetch('https://api.deezer.com/search/track?q='+encodeURIComponent(term));
+        if(!response.ok)continue;
+        const data=await response.json(),items=data.data||[];
+        const best=items.filter(x=>x.album&&(x.album.cover_xl||x.album.cover_big)).sort((a,b)=>score(b)-score(a))[0];
+        if(best){found={art:best.album.cover_xl||best.album.cover_big,artist:best.artist?.name||artist||'',album:best.album?.title||''};break;}
+      }catch(e){}
     }
-  }catch(e){/* The player remains usable when artwork lookup is unavailable. */}
+  }
+  if(found){
+    track.art=found.art;track.artist=found.artist;track.album=found.album;track.artChecked=true;
+    const saved=await idbGet(track.id);
+    if(saved)await idbPut({...saved,art:track.art,artist:track.artist,album:track.album});
+  }
+  track.artLoading=false;
   renderPlayer();
 }
 async function addFiles(fs){
@@ -647,8 +677,9 @@ async function dropTrack(id){
 async function rmTrack(id){await dropTrack(id);if(window.onTrackRemove)onTrackRemove(id)}
 function renderPlayer(){
   const h=$('pl'),n=M.list.length,t=M.i>=0?M.list[M.i]:null,sh=S.set&&S.set.sh,rp=(S.set&&S.set.rp)||0;
+  const progress=trkProgress?`<div class="cloud-progress"><div class="cloud-progress-head"><strong>${esc(trkProgress.name||'Музыка')}</strong><span>${Math.max(0,Math.min(100,Math.round(trkProgress.percent||0)))}%</span></div><div class="cloud-progress-track"><div class="cloud-progress-fill" style="width:${Math.max(0,Math.min(100,trkProgress.percent||0))}%"></div></div><div class="cloud-progress-note">${esc(trkProgress.label||'Синхронизация с облаком')}</div></div>`:'';
   if(!n){
-    h.innerHTML=`<div class="player-shell player-empty"><button class="pbb" data-p="add">＋ Добавить музыку</button><span class="ph">Загрузи аудиофайлы или перетащи их сюда</span><input type="file" id="pfi" accept="audio/*" multiple hidden></div>`;
+    h.innerHTML=`<div class="player-shell player-empty"><button class="pbb" data-p="add">＋ Добавить музыку</button><span class="ph">Загрузи аудиофайлы или перетащи их сюда</span><input type="file" id="pfi" accept="audio/*" multiple hidden>${progress}</div>`;
     i18n(h);return;
   }
   h.innerHTML=`<div class="player-shell">
@@ -670,6 +701,7 @@ function renderPlayer(){
       </div>
     </div>
     <input type="file" id="pfi" accept="audio/*" multiple hidden>
+    ${progress}
     ${plOpen?`<div class="queue-list">${M.list.map((m,i)=>`<div class="queue-row${i===M.i?' active':''}"><button class="queue-track" data-p="t${i}">${cover(m.n,m.art,true)}<span class="queue-meta"><strong>${esc(m.n)}</strong><small>${esc(m.artist||'Неизвестный исполнитель')}</small></span><span class="queue-size">${m.cloud?'☁ ':''}${(m.size/1048576).toFixed(1)} МБ</span></button><button class="queue-remove" data-p="x${i}" aria-label="Удалить">×</button></div>`).join('')}</div>`:''}
   </div>`;
   i18n(h);
