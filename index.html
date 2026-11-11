@@ -239,6 +239,11 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:8px 0}
 .queue-track strong,.queue-track small{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .queue-track strong{font-size:13px;font-weight:650}
 .queue-track small,.queue-size{font-size:11px;color:var(--mute)}
+.sync-status{font-weight:600;white-space:nowrap}
+.sync-cloud{color:#55aaff!important}
+.sync-local{color:#ffad55!important}
+.sync-uploading{color:#b99aff!important}
+.sync-error{color:#ff647c!important}
 .queue-track .pcov{width:42px;height:42px;border-radius:10px}
 .queue-remove{width:34px!important;height:34px!important;flex:none;color:var(--mute)}
 @media(max-width:520px){
@@ -692,7 +697,7 @@ function renderPlayer(){
       <div class="player-info">
         <div class="player-kicker">NOW PLAYING</div>
         <div class="ptt nt" title="${t?esc(t.n):''}">${t?esc(t.n):'Выбери трек'}</div>
-        <div class="pst">${t?(t.artist?esc(t.artist)+' · ':'')+(t.syncState==='cloud'?'☁ В облаке':t.syncState==='uploading'?'↑ Загружается в облако':t.syncState==='error'?'⚠ Ошибка загрузки':'● Только на этом устройстве')+' · '+(M.i+1)+' / '+n:n+' треков'}${trkMsg?' · '+esc(trkMsg):''}</div>
+        <div class="pst">${t?(t.artist?esc(t.artist)+' · ':'')+'<span class="sync-status '+(t.syncState==='cloud'?'sync-cloud':t.syncState==='uploading'?'sync-uploading':t.syncState==='error'?'sync-error':'sync-local')+'">'+(t.syncState==='cloud'?'☁ В облаке':t.syncState==='uploading'?'↑ Загружается в облако':t.syncState==='error'?'⚠ Ошибка загрузки':'● Локально')+'</span> · '+(M.i+1)+' / '+n:n+' треков'}${trkMsg?' · '+esc(trkMsg):''}</div>
         <div class="player-progress"><span id="pcur">${tfmt(AU.currentTime)}</span><input type="range" id="ppr" min="0" max="${AU.duration||1}" step="1" value="${AU.currentTime||0}" aria-label="Перемотка"><span id="pdur">${tfmt(AU.duration)}</span></div>
       </div>
       <div class="player-actions">
@@ -706,7 +711,7 @@ function renderPlayer(){
     </div>
     <input type="file" id="pfi" accept="audio/*" multiple hidden>
     ${progress}
-    ${plOpen?`<div class="queue-list">${M.list.map((m,i)=>`<div class="queue-row${i===M.i?' active':''}"><button class="queue-track" data-p="t${i}">${cover(m.n,m.art,true)}<span class="queue-meta"><strong>${esc(m.n)}</strong><small>${esc(m.artist||'Неизвестный исполнитель')} · ${m.syncState==='cloud'?'☁ В облаке':m.syncState==='uploading'?'↑ Загружается':m.syncState==='error'?'⚠ Ошибка':'● Локально'}</small></span><span class="queue-size">${(m.size/1048576).toFixed(1)} МБ</span></button><button class="queue-remove" data-p="x${i}" aria-label="Удалить">×</button></div>`).join('')}</div>`:''}
+    ${plOpen?`<div class="queue-list">${M.list.map((m,i)=>`<div class="queue-row${i===M.i?' active':''}"><button class="queue-track" data-p="t${i}">${cover(m.n,m.art,true)}<span class="queue-meta"><strong>${esc(m.n)}</strong><small>${esc(m.artist||'Неизвестный исполнитель')} · <span class="sync-status ${m.syncState==='cloud'?'sync-cloud':m.syncState==='uploading'?'sync-uploading':m.syncState==='error'?'sync-error':'sync-local'}">${m.syncState==='cloud'?'☁ В облаке':m.syncState==='uploading'?'↑ Загружается':m.syncState==='error'?'⚠ Ошибка':'● Локально'}</span></small></span><span class="queue-size">${(m.size/1048576).toFixed(1)} МБ</span></button><button class="queue-remove" data-p="x${i}" aria-label="Удалить">×</button></div>`).join('')}</div>`:''}
   </div>`;
   i18n(h);
 }
