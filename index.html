@@ -243,18 +243,12 @@ let S={habits:[{id:'p',name:'Продуктивный день'}],days:{}};
 let view={y:now.getFullYear(),m:now.getMonth()},sel=TODAY,store=null,timer=null,range='m';
 
 async function load(){
+  // Firebase sync.js owns cloud authentication and synchronization.
+  // Load the browser copy first; the cloud copy is reconciled after auth.
   try{
-    if(window.claude){
-      const db=await claude.use('db'),u=await claude.use('user');
-      if(db&&u){
-        const id=await u.id();
-        store=db.collection('data/users/'+id).doc('tracker');
-        const s=await store.get();
-        if(s.exists&&s.data().json){S=JSON.parse(s.data().json);return}
-      }
-    }
-  }catch(e){store=null}
-  try{const r=localStorage.getItem('moi-dni');if(r&&!store)S=JSON.parse(r)}catch(e){}
+    const r=localStorage.getItem('moi-dni');
+    if(r) S=JSON.parse(r);
+  }catch(e){}
 }
 function save(){
   clearTimeout(timer);
@@ -717,7 +711,8 @@ document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[data-r]')
 $('prev').onclick=()=>{view.m--;if(view.m<0){view.m=11;view.y--}renderCal();renderStats()};
 $('next').onclick=()=>{view.m++;if(view.m>11){view.m=0;view.y++}renderCal();renderStats()};
 $('tod').onclick=()=>{view={y:now.getFullYear(),m:now.getMonth()};sel=TODAY;all()};
-load().then(()=>{S.set=Object.assign({name:'',photo:'',theme:'auto',lang:'ru',ws:1},S.set||{});S.chat=S.chat||[];S.tasks=S.tasks||[];S.focus=S.focus||[];S.cf=S.cf||[];applyTheme();applyLang();renderAv();renderPlayer();all();i18n(document.body)});
+window.guideReady = load().then(()=>{S.set=Object.assign({name:'',photo:'',theme:'auto',lang:'ru',ws:1},S.set||{});S.chat=S.chat||[];S.tasks=S.tasks||[];S.focus=S.focus||[];S.cf=S.cf||[];applyTheme();applyLang();renderAv();renderPlayer();all();i18n(document.body)});
 </script>
+<script src="sync.js"></script>
 </body>
 </html>
