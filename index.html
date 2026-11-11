@@ -574,7 +574,7 @@ async function syncCF(){
   }catch(e){cfmsg('Не удалось подключиться к Codeforces. Внутри Claude страница заблокирована, на своём домене должно работать.')}
 }
 
-T.push(...`или перетащи файлы сюда|or drop files here~Выбери трек|Pick a track~ треков| tracks~ МБ| MB`.split('~').map(l=>l.split('|')));T.sort((a,b)=>b[0].length-a[0].length);
+T.push(...`или перетащи файлы сюда|or drop files here~Выбери трек|Pick a track~ треков| tracks~ МБ| MB~Добавить музыку|Add music~Загрузи аудиофайлы или перетащи их сюда|Upload audio files or drag them here~Локальная музыка|Local audio~Неизвестный исполнитель|Unknown artist`.split('~').map(l=>l.split('|')));T.sort((a,b)=>b[0].length-a[0].length);
 let plOpen=false,trkMsg='';
 const idb=()=>new Promise((res,rej)=>{try{const r=indexedDB.open('moi-dni-tracks',1);r.onupgradeneeded=()=>r.result.createObjectStore('t',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
 async function idbAll(){try{const d=await idb();return await new Promise(res=>{const q=d.transaction('t').objectStore('t').getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([])})}catch(e){return []}}
