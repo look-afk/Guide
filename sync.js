@@ -29,6 +29,8 @@
   async function init() {
     if (ready) return ready;
     ready = (async () => {
+      // Wait until the initial browser state has loaded before cloud reconciliation.
+      if (window.guideReady) await window.guideReady;
       const cfg = await (await fetch('firebase-applet-config.json')).json();
       const B = 'https://www.gstatic.com/firebasejs/10.12.2/';
       const [A, Au, F] = await Promise.all([
