@@ -606,7 +606,7 @@ async function idbAll(){try{const d=await idb();return await new Promise(res=>{c
 async function idbPut(o){try{const d=await idb();return await new Promise(res=>{const t=d.transaction('t','readwrite');t.objectStore('t').put(o);t.oncomplete=()=>res(true);t.onerror=()=>res(false)})}catch(e){return false}}
 async function idbDel(id){try{const d=await idb();return await new Promise(res=>{const t=d.transaction('t','readwrite');t.objectStore('t').delete(id);t.oncomplete=()=>res(true);t.onerror=()=>res(false)})}catch(e){return false}}
 async function idbGet(id){try{const d=await idb();return await new Promise(res=>{const q=d.transaction('t').objectStore('t').get(id);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)})}catch(e){return null}}
-const mk=o=>({id:o.id,n:o.name,size:o.size,type:o.type,u:URL.createObjectURL(o.blob),cloud:!!o.cloud,art:o.art||'',artist:o.artist||'',album:o.album||'',artChecked:!!o.art});
+const mk=o=>({id:o.id,n:o.name,size:o.size,type:o.type,u:URL.createObjectURL(o.blob),cloud:!!o.cloud,syncState:o.syncState||(o.cloud?'cloud':'local'),art:o.art||'',artist:o.artist||'',album:o.album||'',artChecked:!!o.art});
 const cover=(n,art='',small=false)=>`<span class='pcov${small?' small':''}'>${art?`<img src='${esc(art)}' alt='Обложка ${esc(n)}' loading='lazy'>`:'♪'}</span>`;
 function parseTrackName(name){
   const clean=String(name||'').replace(/\.(mp3|m4a|wav|ogg|flac|aac|opus)$/i,'').replace(/\s*\[(?:audio|lyrics|official)[^\]]*\]/ig,'').trim();
@@ -663,7 +663,9 @@ async function addFiles(fs){
   for(const f of fs){
     if(!/^audio\//.test(f.type)&&!/\.(mp3|m4a|wav|ogg|flac|aac|opus)$/i.test(f.name))continue;
     const o={id:'k'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:f.name.split('.').slice(0,-1).join('.')||f.name,size:f.size,type:f.type||'audio/mpeg',blob:f,cloud:false,ts:Date.now()};
-    await idbPut(o);M.list.push(mk(o));
+    const stored=await idbPut(o);
+    if(!stored){trkMsg='Не удалось сохранить файл на устройстве';continue}
+    M.list.push(mk(o));
   }
   if(M.i<0&&M.list.length)playIdx(0);else renderPlayer();
   if(window.trackSync)trackSync();
@@ -688,7 +690,7 @@ function renderPlayer(){
       <div class="player-info">
         <div class="player-kicker">NOW PLAYING</div>
         <div class="ptt nt" title="${t?esc(t.n):''}">${t?esc(t.n):'Выбери трек'}</div>
-        <div class="pst">${t&&t.artist?esc(t.artist):'Локальная музыка'} · ${t?(M.i+1)+' / '+n:n+' треков'}${trkMsg?' · '+esc(trkMsg):''}</div>
+        <div class="pst">${t&&t.artist?esc(t.artist):'Локальная музыка'} · ${t?(M.i+1)+' / '+n:n+' треков'} · ${t?(t.syncState==='cloud'?'В облаке':t.syncState==='uploading'?'Загружается в облако':t.syncState==='error'?'Ошибка загрузки':'Только на этом устройстве'):''}${trkMsg?' · '+esc(trkMsg):''}</div>
         <div class="player-progress"><span id="pcur">${tfmt(AU.currentTime)}</span><input type="range" id="ppr" min="0" max="${AU.duration||1}" step="1" value="${AU.currentTime||0}" aria-label="Перемотка"><span id="pdur">${tfmt(AU.duration)}</span></div>
       </div>
       <div class="player-actions">
@@ -702,7 +704,7 @@ function renderPlayer(){
     </div>
     <input type="file" id="pfi" accept="audio/*" multiple hidden>
     ${progress}
-    ${plOpen?`<div class="queue-list">${M.list.map((m,i)=>`<div class="queue-row${i===M.i?' active':''}"><button class="queue-track" data-p="t${i}">${cover(m.n,m.art,true)}<span class="queue-meta"><strong>${esc(m.n)}</strong><small>${esc(m.artist||'Неизвестный исполнитель')}</small></span><span class="queue-size">${m.cloud?'☁ ':''}${(m.size/1048576).toFixed(1)} МБ</span></button><button class="queue-remove" data-p="x${i}" aria-label="Удалить">×</button></div>`).join('')}</div>`:''}
+    ${plOpen?`<div class="queue-list">${M.list.map((m,i)=>`<div class="queue-row${i===M.i?' active':''}"><button class="queue-track" data-p="t${i}">${cover(m.n,m.art,true)}<span class="queue-meta"><strong>${esc(m.n)}</strong><small>${esc(m.artist||'Неизвестный исполнитель')} · ${m.syncState==='cloud'?'☁ В облаке':m.syncState==='uploading'?'↑ Загружается':m.syncState==='error'?'⚠ Ошибка':'● Локально'}</small></span><span class="queue-size">${(m.size/1048576).toFixed(1)} МБ</span></button><button class="queue-remove" data-p="x${i}" aria-label="Удалить">×</button></div>`).join('')}</div>`:''}
   </div>`;
   i18n(h);
 }
