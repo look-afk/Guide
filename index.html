@@ -181,6 +181,27 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:8px 0}
 .logo{display:flex;margin-right:10px}.logo svg{width:42px;height:42px;border-radius:13px}
 .mn{margin-top:40px;max-width:640px}.mn summary{cursor:pointer;color:var(--mute);font-weight:500}.mn p{color:var(--mute);font-size:14px}
 .tk small{color:var(--mute);font-size:13px}
+.pb2{display:grid;grid-template-columns:auto minmax(110px,1fr) auto minmax(170px,1.3fr) 150px auto;grid-template-areas:'c i t s v b';gap:6px 14px;align-items:center;position:relative}
+.pc{grid-area:c}.pin{grid-area:i;min-width:0}.pct{grid-area:t}.psk{grid-area:s}.pvl{grid-area:v}.pbt{grid-area:b}
+.pcov{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;font-size:20px;flex:none}
+.ptt{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pst{font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pct,.pbt,.pvl{display:flex;align-items:center;gap:4px}
+.pb2 button{border:0;background:transparent;border-radius:50%;width:38px;height:38px;font-size:17px;flex:none}
+.pb2 button:hover{background:var(--surf)}
+.pb2 .pp{width:46px;height:46px;background:var(--ink);color:var(--bg);font-size:18px}
+.pb2 .sm{font-size:15px;opacity:.5}.pb2 .sm.on{opacity:1;background:var(--surf)}
+.psk{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mute)}
+.psk input,.pvl input{flex:1;margin:0;min-width:0;width:100%}
+.pe{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pe .pbb{border:2px solid var(--line);background:transparent;border-radius:999px;padding:0 16px;height:40px;font-weight:500;font-size:15px}
+.ph{color:var(--mute);font-size:14px}
+.pq{grid-column:1/-1;max-height:300px;overflow:auto;background:var(--surf);border:2px solid var(--line);border-radius:18px;padding:6px}
+.pi{display:flex;align-items:center;border-radius:12px}.pi.on{background:var(--bg)}
+.pb2 .pit{flex:1;display:flex;align-items:center;gap:10px;width:auto;height:auto;border-radius:12px;padding:6px 8px;text-align:left;min-width:0;font-size:14px}
+.pit span:not(.pcov){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pit small{color:var(--mute)}
+.pit .pcov{width:34px;height:34px;font-size:15px;border-radius:10px}
+.pb2 .pix{color:var(--mute)}
+@media(max-width:900px){.pb2{grid-template-columns:auto 1fr auto;grid-template-areas:'c i b' 't t t' 's s s'}.pvl{display:none}.pct{justify-content:center}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -416,25 +437,13 @@ async function aiSync(manual){
   }catch(e){fmsg('Не удалось получить ответ: ')}
 }
 function playIdx(i){M.i=i;AU.src=M.list[i].u;AU.play().catch(()=>{});renderPlayer()}
-const mNext=()=>{if(M.list.length)playIdx((M.i+1)%M.list.length)};
-const mPrev=()=>{if(M.list.length)playIdx((M.i-1+M.list.length)%M.list.length)};
-AU.onended=mNext;
-AU.ontimeupdate=()=>{const r=$('ppr');if(r&&AU.duration){r.max=AU.duration;r.value=AU.currentTime}};
-function renderFocusOld(){
-  if(P.left===null)P.left=dur();
-  const ts=S.tasks.filter(t=>!t.done),td=S.focus.filter(f=>f.d===TODAY),mins=td.reduce((s,f)=>s+f.m,0);
-  $('v-focus').innerHTML=`<div class='sgs'>
-<div class='sg'><h3>Помодоро</h3><div class='pm'>${P.mode==='f'?'Фокус':'Перерыв'} · ${P.cyc+1}</div><div class='pt' id='pt'>${fm2(P.left)}</div>
-<div class='bt'><button class='btn dark' data-a='go'>${P.run?'Пауза':'Старт'}</button><button class='btn' data-a='rs'>Сброс</button><button class='btn' data-a='sk'>Пропустить</button></div>
-<label class='lb2'>Фокус, мин <input class='in w' type='number' min='1' max='120' id='fm' value='${S.set.fm||25}'></label><label class='lb2'>Перерыв, мин <input class='in w' type='number' min='1' max='60' id='bm' value='${S.set.bm||5}'></label>
-<select class='in' id='ts'><option value=''>Без задачи</option>${ts.map(t=>`<option value='${t.id}'${t.id===P.task?' selected':''}>${esc(t.t)}</option>`).join('')}</select>
-<div class='kp' style='margin-top:22px'><div><b>${td.length}</b><small>Сессий сегодня</small></div><div><b>${mins}</b><small>Минут фокуса сегодня</small></div></div>
-<button class='btn' data-a='ai'>Отправить итоги дня ИИ</button><p style='margin-top:10px'>После каждой фокус-сессии ИИ сам разберёт сделанное, допишет строку в описание сегодняшнего дня и при необходимости поставит главную галочку.</p><div class='st' id='fs'></div></div>
-<div class='sg'><h3>Задачи</h3><div class='add'><input id='tn' class='in' maxlength='80' placeholder='Новая задача'><button data-a='ta'>Добавить</button></div>${S.tasks.map(t=>`<div class='tk'><button class='ck${t.done?' on':''}' data-td='${t.id}'>${t.done?'✓':''}</button><span class='nt${t.done?' dn2':''}'>${esc(t.t)}</span><button class='lnk' data-tx='${t.id}'>×</button></div>`).join('')}</div>
-<div class='sg'><h3>Музыка</h3><p>Spotify подключить нельзя: страница не может обращаться к его серверам. Добавляй скачанные песни файлами с устройства, список сбрасывается при обновлении страницы.</p><div class='now nt'>${M.i>=0?esc(M.list[M.i].n):'—'}</div><input type='range' id='mpr' min='0' max='${AU.duration||1}' step='1' value='${AU.currentTime||0}'>
-<div class='bt'><button class='btn' data-a='pv'>⏮</button><button class='btn dark' data-a='pp'>${AU.paused?'▶':'⏸'}</button><button class='btn' data-a='nx'>⏭</button><button class='btn' data-a='mf'>Добавить песни</button><input type='file' id='mfi' accept='audio/*' multiple hidden></div><input type='range' id='mv' min='0' max='1' step='.05' value='${AU.volume}'>${M.list.map((m,i)=>`<button class='trk nt${i===M.i?' on':''}' data-ti='${i}'>${esc(m.n)}</button>`).join('')}</div></div>`;
-  i18n($('v-focus'));
-}
+function nextIdx(auto){const n=M.list.length,rp=(S.set&&S.set.rp)||0;if(!n)return -1;if(auto&&rp===2)return M.i;if(S.set&&S.set.sh&&n>1){let r;do r=Math.floor(Math.random()*n);while(r===M.i);return r}const j=M.i+1;if(j>=n)return(rp===1||!auto)?0:-1;return j}
+const mNext=()=>{const j=nextIdx(false);if(j>=0)playIdx(j)};
+const mPrev=()=>{if(!M.list.length)return;if(AU.currentTime>3){AU.currentTime=0;return}playIdx((M.i-1+M.list.length)%M.list.length)};
+AU.onended=()=>{const j=nextIdx(true);if(j<0)renderPlayer();else playIdx(j)};
+const tfmt=s=>isFinite(s)?Math.floor(s/60)+':'+pad(Math.floor(s%60)):'0:00';
+AU.ontimeupdate=()=>{const r=$('ppr');if(r&&AU.duration){r.max=AU.duration;r.value=AU.currentTime}const c=$('pcur');if(c)c.textContent=tfmt(AU.currentTime);const d=$('pdur');if(d)d.textContent=tfmt(AU.duration)};
+AU.onloadedmetadata=()=>AU.ontimeupdate();
 function addTask(){const v=$('tn').value.trim();if(!v)return;S.tasks.push({id:'t'+Date.now().toString(36),t:v,done:false,dd:''});save();renderFocus()}
 $('v-focus').onclick=e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;
   if(b.dataset.td){const t=S.tasks.find(x=>x.id===b.dataset.td);if(t){t.done=!t.done;t.dd=t.done?TODAY:'';save();renderFocus();if(t.done)syncSoon()}}
@@ -541,22 +550,61 @@ async function syncCF(){
   }catch(e){cfmsg('Не удалось подключиться к Codeforces. Внутри Claude страница заблокирована, на своём домене должно работать.')}
 }
 
-let plOpen=false;
-function addFiles(fs){for(const f of fs)M.list.push({n:f.name.split('.').slice(0,-1).join('.')||f.name,u:URL.createObjectURL(f)});if(M.i<0&&M.list.length)playIdx(0);else renderPlayer()}
+T.push(...`или перетащи файлы сюда|or drop files here~Выбери трек|Pick a track~ треков| tracks~ МБ| MB`.split('~').map(l=>l.split('|')));T.sort((a,b)=>b[0].length-a[0].length);
+let plOpen=false,trkMsg='';
+const idb=()=>new Promise((res,rej)=>{try{const r=indexedDB.open('moi-dni-tracks',1);r.onupgradeneeded=()=>r.result.createObjectStore('t',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
+async function idbAll(){try{const d=await idb();return await new Promise(res=>{const q=d.transaction('t').objectStore('t').getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([])})}catch(e){return []}}
+async function idbPut(o){try{const d=await idb();return await new Promise(res=>{const t=d.transaction('t','readwrite');t.objectStore('t').put(o);t.oncomplete=()=>res(true);t.onerror=()=>res(false)})}catch(e){return false}}
+async function idbDel(id){try{const d=await idb();return await new Promise(res=>{const t=d.transaction('t','readwrite');t.objectStore('t').delete(id);t.oncomplete=()=>res(true);t.onerror=()=>res(false)})}catch(e){return false}}
+const mk=o=>({id:o.id,n:o.name,size:o.size,type:o.type,u:URL.createObjectURL(o.blob),cloud:!!o.cloud});
+const cover=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return `<span class='pcov' style='background:linear-gradient(135deg,hsl(${h} 80% 62%),hsl(${(h+60)%360} 75% 52%))'>🎵</span>`};
+async function addFiles(fs){
+  for(const f of fs){
+    if(!/^audio\//.test(f.type)&&!/\.(mp3|m4a|wav|ogg|flac|aac|opus)$/i.test(f.name))continue;
+    const o={id:'k'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:f.name.split('.').slice(0,-1).join('.')||f.name,size:f.size,type:f.type||'audio/mpeg',blob:f,cloud:false,ts:Date.now()};
+    await idbPut(o);M.list.push(mk(o));
+  }
+  if(M.i<0&&M.list.length)playIdx(0);else renderPlayer();
+  if(window.trackSync)trackSync();
+}
+async function dropTrack(id){
+  const i=M.list.findIndex(t=>t.id===id);if(i<0)return;
+  const cur=i===M.i;URL.revokeObjectURL(M.list[i].u);M.list.splice(i,1);
+  if(cur){AU.pause();AU.removeAttribute('src');M.i=-1}else if(i<M.i)M.i--;
+  await idbDel(id);renderPlayer();
+}
+async function rmTrack(id){await dropTrack(id);if(window.onTrackRemove)onTrackRemove(id)}
 function renderPlayer(){
-  const h=$('pl'),has=M.list.length;
-  h.innerHTML=`<div class='pb'>${has?`<div class='pn nt'>${M.i>=0?esc(M.list[M.i].n):'—'}</div><button data-p='pv' aria-label='Назад'>⏮</button><button class='pp' data-p='pp' aria-label='Играть или пауза'>${AU.paused?'▶':'⏸'}</button><button data-p='nx' aria-label='Дальше'>⏭</button><input type='range' id='ppr' min='0' max='${AU.duration||1}' step='1' value='${AU.currentTime||0}' aria-label='Перемотка'><input type='range' id='pvv' min='0' max='1' step='.05' value='${AU.volume}' aria-label='Громкость' style='width:80px'><button data-p='ls' aria-label='Список'>☰</button><button data-p='add' aria-label='Добавить'>＋</button>`:`<button class='pbb' data-p='add'>🎵 Добавить музыку</button>`}<input type='file' id='pfi' accept='audio/*' multiple hidden>${plOpen&&has?`<div class='pls'>${M.list.map((m,i)=>`<button class='trk nt${i===M.i?' on':''}' data-p='t${i}'>${esc(m.n)}</button>`).join('')}</div>`:''}</div>`;
+  const h=$('pl'),n=M.list.length,t=M.i>=0?M.list[M.i]:null,sh=S.set&&S.set.sh,rp=(S.set&&S.set.rp)||0;
+  if(!n){h.innerHTML=`<div class='pe'><button class='pbb' data-p='add'>🎵 Добавить музыку</button><span class='ph'>или перетащи файлы сюда</span><input type='file' id='pfi' accept='audio/*' multiple hidden></div>`;i18n(h);return}
+  h.innerHTML=`<div class='pb2'>
+<div class='pc'>${cover(t?t.n:'')}</div>
+<div class='pin'><div class='ptt nt'>${t?esc(t.n):'Выбери трек'}</div><div class='pst'>${t?(M.i+1)+' / '+n:n+' треков'}${trkMsg?' · '+esc(trkMsg):''}</div></div>
+<div class='pct'><button class='sm${sh?' on':''}' data-p='sh' aria-label='Перемешать'>⇄</button><button data-p='pv' aria-label='Назад'>⏮</button><button class='pp' data-p='pp' aria-label='Играть или пауза'>${AU.paused?'▶':'⏸'}</button><button data-p='nx' aria-label='Дальше'>⏭</button><button class='sm${rp?' on':''}' data-p='rp' aria-label='Повтор'>${rp===2?'🔂':'🔁'}</button></div>
+<div class='psk'><span id='pcur'>${tfmt(AU.currentTime)}</span><input type='range' id='ppr' min='0' max='${AU.duration||1}' step='1' value='${AU.currentTime||0}' aria-label='Перемотка'><span id='pdur'>${tfmt(AU.duration)}</span></div>
+<div class='pvl'><button data-p='mu' aria-label='Звук'>${AU.muted||AU.volume===0?'🔇':'🔊'}</button><input type='range' id='pvv' min='0' max='1' step='.05' value='${AU.muted?0:AU.volume}' aria-label='Громкость'></div>
+<div class='pbt'><button data-p='ls' aria-label='Очередь'>☰</button><button data-p='add' aria-label='Добавить'>＋</button></div>
+<input type='file' id='pfi' accept='audio/*' multiple hidden>
+${plOpen?`<div class='pq'>${M.list.map((m,i)=>`<div class='pi${i===M.i?' on':''}'><button class='pit nt' data-p='t${i}'>${cover(m.n)}<span>${esc(m.n)}</span><small>${m.cloud?'☁ ':''}${(m.size/1048576).toFixed(1)} МБ</small></button><button class='pix' data-p='x${i}' aria-label='Удалить'>×</button></div>`).join('')}</div>`:''}
+</div>`;
   i18n(h);
 }
 $('pl').onclick=e=>{const b=e.target.closest('button');if(!b)return;const p=b.dataset.p;
   if(p==='add')$('pfi').click();
   else if(p==='pv')mPrev();else if(p==='nx')mNext();
   else if(p==='pp'){if(M.i<0&&M.list.length)playIdx(0);else if(AU.paused)AU.play().catch(()=>{});else AU.pause()}
+  else if(p==='sh'){S.set.sh=!S.set.sh;save();renderPlayer()}
+  else if(p==='rp'){S.set.rp=((S.set.rp||0)+1)%3;save();renderPlayer()}
+  else if(p==='mu'){AU.muted=!AU.muted;renderPlayer()}
   else if(p==='ls'){plOpen=!plOpen;renderPlayer()}
-  else if(p&&p[0]==='t'){plOpen=false;playIdx(+p.slice(1))}};
+  else if(p&&p[0]==='t')playIdx(+p.slice(1));
+  else if(p&&p[0]==='x')rmTrack(M.list[+p.slice(1)].id)};
 $('pl').onchange=e=>{if(e.target.id==='pfi'){addFiles(e.target.files);e.target.value=''}};
-$('pl').oninput=e=>{if(e.target.id==='ppr')AU.currentTime=+e.target.value;if(e.target.id==='pvv')AU.volume=+e.target.value};
+$('pl').oninput=e=>{if(e.target.id==='ppr')AU.currentTime=+e.target.value;if(e.target.id==='pvv'){AU.muted=false;AU.volume=+e.target.value}};
+$('pl').ondragover=e=>e.preventDefault();
+$('pl').ondrop=e=>{e.preventDefault();if(e.dataTransfer&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files)};
 AU.onplay=AU.onpause=renderPlayer;
+idbAll().then(a=>{a.sort((x,y)=>(x.ts||0)-(y.ts||0));a.forEach(o=>{if(!M.list.some(t=>t.id===o.id))M.list.push(mk(o))});renderPlayer()});
 function renderFocus(){
   const ts=S.tasks.filter(t=>!t.done),td=S.focus.filter(f=>f.d===TODAY),mins=td.reduce((s,f)=>s+f.m,0),f=P.mode==='f',c=f?'--m1':'--m4';
   if(P.left===null)P.left=dur();
@@ -615,12 +663,12 @@ function renderSet(){
   const s=S.set,sg=(k,v,l)=>`<button data-${k}='${v}' class='${(k==='th'?s.theme:k==='lg'?s.lang:String(s.ws))===String(v)?'on':''}'>${l}</button>`;
   $('v-set').innerHTML=`<div class='sgs'>
 <div class='sg'><h3>Профиль</h3><div class='pf'><div class='av big'>${s.photo?`<img src='${s.photo}' alt=''>`:esc(Array.from(s.name||'?')[0].toUpperCase())}</div><div class='pfc'><input id='nm' maxlength='30' placeholder='Твоё имя' value='${esc(s.name)}'><div class='bt'><button class='btn' id='phb'>Сменить фото</button>${s.photo?`<button class='btn' id='phx'>Убрать</button>`:''}<input type='file' id='phf' accept='image/*' hidden></div></div></div></div>
-<div class='sg'><h3>Аккаунт</h3><p>${store?'Данные синхронизируются с твоим аккаунтом Claude.':'Облако сейчас недоступно, данные лежат только в этом браузере.'}</p><p>Вход через Google внутри самой страницы сделать нельзя. Вход идёт через твой аккаунт Claude, а в него можно заходить через Gmail.</p><p>ИИ работает через Claude прямо на странице, ключ API не нужен.</p></div>
+<div class='sg'><h3>Аккаунт</h3><p>${store?'Данные синхронизируются с твоим аккаунтом Claude.':'Облако сейчас недоступно, данные лежат только в этом браузере.'}</p></div>
 <div class='sg'><h3>Галочки</h3><p>+ засчитывается как прокачка и продуктивность, − как деградация. Цвет рамки показывает это в дне, а в статистике есть баланс и отдельный счёт только плюсов.</p>${S.habits.map(h=>`<div class='hk'><span>${esc(h.name)}</span><span class='seg'><button data-hk='${h.id}:good' class='plus ${h.k!=='bad'?'on':''}' aria-label='Плюс'>+</button><button data-hk='${h.id}:bad' class='minus ${h.k==='bad'?'on':''}' aria-label='Минус'>−</button></span></div>`).join('')}</div>
 <div class='sg'><h3>Тема</h3><div class='seg'>${sg('th','auto','Как в системе')}${sg('th','light','Светлая')}${sg('th','dark','Тёмная')}</div></div>
 <div class='sg'><h3>Язык</h3><div class='seg'>${sg('lg','ru','Русский')}${sg('lg','en','English')}</div></div>
 <div class='sg'><h3>Неделя</h3><div class='seg'>${sg('ws','1','С понедельника')}${sg('ws','0','С воскресенья')}</div></div>
-<div class='sg'><h3>Интеграции</h3><p>Ник Codeforces для синхронизации задач.</p><input class='in' id='cfh' maxlength='40' placeholder='Ник Codeforces' value='${esc(s.cfh||'')}' style='width:100%;margin-bottom:14px'><p>Ключ для ИИ нужен, если страница размещена вне Claude. Подойдёт ключ Gemini из Google AI Studio или ключ Anthropic (sk-ant-…). Он хранится только в этом браузере и не попадает в экспорт.</p><input class='in' id='ak' type='password' autocomplete='off' placeholder='Ключ Gemini или sk-ant-…' value='${esc(keyGet())}' style='width:100%'><p style='margin-top:12px'>Spotify и Gmail пока не подключены: для них нужна регистрация приложения и отдельный сервер.</p></div>
+<div class='sg'><h3>Интеграции</h3><p>Ник Codeforces для синхронизации задач.</p><input class='in' id='cfh' maxlength='40' placeholder='Ник Codeforces' value='${esc(s.cfh||'')}' style='width:100%;margin-bottom:14px'><p>Ключ для ИИ нужен, если страница размещена вне Claude. Подойдёт ключ Gemini из Google AI Studio или ключ Anthropic (sk-ant-…). Если ты вошёл через Google, ключ сохраняется в твоём облаке и подтягивается на другие устройства. В экспорт он не попадает.</p><input class='in' id='ak' type='password' autocomplete='off' placeholder='Ключ Gemini или sk-ant-…' value='${esc(keyGet())}' style='width:100%'></div>
 <div class='sg'><h3>Данные</h3><p>Импорт добавляет дни из файла к текущим, одинаковые даты заменяются.</p><div class='bt'><button class='btn' id='ex'>Экспорт JSON</button><button class='btn' id='im'>Импорт JSON</button><button class='btn' id='rs'>Удалить всё</button><input type='file' id='imf' accept='.json,application/json' hidden></div><div class='st' id='ss'></div></div></div>`;
   i18n($('v-set'));
 }
@@ -647,7 +695,7 @@ $('v-set').onclick=e=>{const b=e.target.closest('button');if(!b)return;
   else if(b.id==='ex')exportJ();
   else if(b.id==='im')$('imf').click();
   else if(b.id==='rs'){if(!b.dataset.s){b.dataset.s=1;b.textContent=L('Точно удалить? Нажми ещё раз')}else{S.days={};S.habits=[{id:'p',name:'Продуктивный день'}];S.chat=[];S.tasks=[];S.focus=[];S.cf=[];save();all();renderSet();msg('Все данные удалены')}}};
-$('v-set').oninput=e=>{if(e.target.id==='cfh'){S.set.cfh=e.target.value.trim();save()}if(e.target.id==='ak')keySet(e.target.value.trim());if(e.target.id==='nm'){S.set.name=e.target.value;renderAv();save()}};
+$('v-set').oninput=e=>{if(e.target.id==='cfh'){S.set.cfh=e.target.value.trim();save()}if(e.target.id==='ak'){keySet(e.target.value.trim());if(window.onKey)onKey()}if(e.target.id==='nm'){S.set.name=e.target.value;renderAv();save()}};
 $('v-set').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;if(e.target.id==='phf')readPhoto(f);if(e.target.id==='imf')importJ(f);e.target.value=''};
 $('cal').onclick=e=>{const b=e.target.closest('[data-k]');if(b){sel=b.dataset.k;renderCal();renderEd();if(innerWidth<860)$('ed').scrollIntoView({behavior:'smooth'})}};
 $('ed').onclick=e=>{
