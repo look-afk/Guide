@@ -684,14 +684,13 @@ async function lookupCover(track){
       }catch(e){}
     }
   }
-  // Last fallback: Google Images via the server-side Custom Search endpoint.
+  // Final fallback: MusicBrainz identifies the release; Cover Art Archive supplies its cover.
   if(!found){
-    const query=[left,right].filter(Boolean).join(' ')||parsed.query||track.n;
     try{
-      const response=await fetch('/api/cover?q='+encodeURIComponent(query));
+      const response=await fetch('/api/cover?artist='+encodeURIComponent(left)+'&title='+encodeURIComponent(right));
       if(response.ok){
         const data=await response.json();
-        if(data.image)found={art:data.image,artist:track.artist||'',album:track.album||''};
+        if(data.image)found={art:data.image,artist:left||track.artist||'',album:data.release||track.album||''};
       }
     }catch(e){}
   }
