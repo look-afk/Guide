@@ -615,7 +615,7 @@ function parseTrackName(name){
 }
 async function lookupCover(track){
   if(!track||track.art||track.artLoading)return;
-  const parsed=parseTrackName(track.n),norm=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9а-яё]+/gi,' ').trim();
+  const parsed=parseTrackName(track.n),norm=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9а-яё]+/gi,' ').trim();
   const title=parsed.title||parsed.query,artist=parsed.artist;
   if(!title)return;
   track.artLoading=true;
@@ -636,7 +636,7 @@ async function lookupCover(track){
       if(!response.ok)continue;
       const data=await response.json(),items=data.results||[];
       const best=items.filter(x=>x.artworkUrl100).sort((a,b)=>score(b)-score(a))[0];
-      if(best){found={art:best.artworkUrl100.replace(/\\d+x\\d+bb/,'600x600bb'),artist:best.artistName||artist||'',album:best.collectionName||''};break;}
+      if(best){found={art:best.artworkUrl100.replace('100x100bb','600x600bb'),artist:best.artistName||artist||'',album:best.collectionName||''};break;}
     }catch(e){}
   }
   // Deezer fallback when Apple's catalogue has no usable match or is unavailable.
