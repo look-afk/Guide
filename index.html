@@ -215,15 +215,37 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:8px 0}
 .pst{font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
 .player-progress{display:flex;align-items:center;gap:9px;margin-top:9px;color:var(--mute);font-size:11px;font-variant-numeric:tabular-nums}
 .player-progress input{flex:1;min-width:70px;margin:0;accent-color:var(--m1);cursor:pointer}
-.player-actions{display:flex;align-items:center;gap:5px}
-.player-actions button,.player-tools button{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--ink);font-size:17px}
-.player-actions button:hover,.player-tools button:hover{background:var(--bg)}
-.player-actions button.on{color:var(--m1);background:color-mix(in srgb,var(--m1) 12%,transparent)}
-.player-actions .pp{width:48px;height:48px;background:var(--ink);color:var(--bg);font-size:19px}
-.player-actions .pp:hover{background:var(--m1);color:#fff}
-.player-tools{display:flex;align-items:center;gap:4px;margin-left:8px;padding-left:10px;border-left:1px solid var(--line)}
+.player-shell{background:linear-gradient(145deg,color-mix(in srgb,var(--surf) 96%,#9b7cff 4%),var(--surf));box-shadow:0 18px 48px rgba(13,7,28,.16),inset 0 1px 0 rgba(255,255,255,.06)}
+.player-main{gap:20px}
+.player-art .pcov{width:82px;height:82px;border-radius:20px;box-shadow:0 10px 28px rgba(0,0,0,.2)}
+.player-kicker{letter-spacing:.2em;font-size:9px}
+.ptt{font-size:17px;font-weight:700;letter-spacing:-.025em}
+.player-progress{gap:12px;margin-top:12px}
+.player-progress input{height:5px;accent-color:#a78bfa}
+.player-progress input::-webkit-slider-thumb{cursor:grab}
+.player-actions{display:flex;align-items:center;gap:7px}
+.player-actions button,.player-tools button{display:grid;place-items:center;width:42px;height:42px;border:1px solid transparent;border-radius:14px;background:transparent;color:var(--mute);font-size:17px;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease;cursor:pointer}
+.player-actions button:hover,.player-tools button:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);border-color:var(--line);color:var(--ink);transform:translateY(-2px)}
+.player-actions button:active,.player-tools button:active{transform:scale(.94)}
+.player-actions button.on{color:#b794ff;background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.22)}
+.player-actions .pp{width:58px;height:58px;border:0;border-radius:19px;background:linear-gradient(145deg,#c4a7ff,#9270e8);color:#1b1030;font-size:21px;box-shadow:0 8px 22px rgba(151,112,232,.35)}
+.player-actions .pp:hover{background:linear-gradient(145deg,#d2bdff,#a181f4);color:#1b1030;box-shadow:0 12px 26px rgba(151,112,232,.42)}
+.player-tools{display:flex;align-items:center;gap:5px;margin-left:8px;padding-left:13px;border-left:1px solid var(--line)}
+.player-tools button{width:40px;height:40px;border-radius:13px}
 .player-empty{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.player-empty .pbb{height:42px;padding:0 18px;border:0;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:600}
+.player-empty .pbb{height:46px;padding:0 20px;border:1px solid rgba(255,255,255,.12);border-radius:15px;background:linear-gradient(135deg,#c4a7ff,#9270e8);color:#1b1030;font-weight:700;box-shadow:0 8px 20px rgba(151,112,232,.25);transition:transform .18s ease,box-shadow .18s ease}
+.player-empty .pbb:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(151,112,232,.34)}
+.player-empty .ph{color:var(--mute)}
+.queue-list{padding:8px;border-radius:19px;background:color-mix(in srgb,var(--bg) 88%,#9270e8 12%)}
+.queue-row{padding:5px 7px;border-radius:14px;transition:background .18s ease}
+.queue-row:hover{background:color-mix(in srgb,var(--surf) 70%,transparent)}
+.queue-row.active{background:color-mix(in srgb,#9270e8 12%,var(--surf));box-shadow:inset 3px 0 #a78bfa}
+.queue-track{border-radius:12px!important}
+.queue-track:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)!important}
+.queue-track strong{font-size:13px;letter-spacing:-.01em}
+.queue-remove{display:grid;place-items:center;width:36px!important;height:36px!important;border:1px solid var(--line)!important;border-radius:12px!important;background:transparent!important;color:var(--mute)!important;font-size:18px!important;transition:all .18s ease}
+.queue-remove:hover{background:rgba(255,90,115,.12)!important;border-color:rgba(255,90,115,.35)!important;color:#ff647c!important;transform:scale(1.04)}
+.player-actions button:focus-visible,.player-tools button:focus-visible,.queue-remove:focus-visible,.pbb:focus-visible{outline:3px solid #a78bfa;outline-offset:3px}
 .player-empty .ph{font-size:13px;color:var(--mute)}
 .cloud-progress{margin-top:12px;padding:11px 13px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
 .cloud-progress-head{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px;color:var(--mute)}
@@ -701,12 +723,12 @@ function renderPlayer(){
         <div class="player-progress"><span id="pcur">${tfmt(AU.currentTime)}</span><input type="range" id="ppr" min="0" max="${AU.duration||1}" step="1" value="${AU.currentTime||0}" aria-label="Перемотка"><span id="pdur">${tfmt(AU.duration)}</span></div>
       </div>
       <div class="player-actions">
-        <button class="${sh?'on':''}" data-p="sh" aria-label="Перемешать" title="Перемешать">⇄</button>
-        <button data-p="pv" aria-label="Предыдущий" title="Предыдущий">⏮</button>
-        <button class="pp" data-p="pp" aria-label="Играть или пауза" title="Играть или пауза">${AU.paused?'▶':'Ⅱ'}</button>
-        <button data-p="nx" aria-label="Следующий" title="Следующий">⏭</button>
-        <button class="${rp?'on':''}" data-p="rp" aria-label="Повтор" title="Повтор">${rp===2?'🔂':'↻'}</button>
-        <div class="player-tools"><button data-p="mu" aria-label="Звук" title="Звук">${AU.muted||AU.volume===0?'◖':'◗'}</button><button data-p="ls" aria-label="Очередь" title="Очередь">☷</button><button data-p="add" aria-label="Добавить" title="Добавить">＋</button></div>
+        <button class="${sh?'on':''}" data-p="sh" aria-label="Перемешать" title="Перемешать"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 7h2.5c4.8 0 6.2 10 11 10H21m-5-5 5 5-5 5M4 17h2.5c1.7 0 2.9-1.4 4-3M16 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button data-p="pv" aria-label="Предыдущий" title="Предыдущий"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14M19 6 9 12l10 6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+        <button class="pp" data-p="pp" aria-label="Играть или пауза" title="Играть или пауза">${AU.paused?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z" fill="currentColor"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>'}</button>
+        <button data-p="nx" aria-label="Следующий" title="Следующий"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 5v14M5 6l10 6-10 6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+        <button class="${rp?'on':''}" data-p="rp" aria-label="Повтор" title="Повтор">${rp===2?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2v5h-5M4 11a8 8 0 0 1 13-4l1 1M7 22v-5h5m8-4a8 8 0 0 1-13 4l-1-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9v6m-2-3h4" stroke="currentColor" stroke-width="1.6"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5m11 0a8 8 0 0 0-14-5L4 12m0 0a8 8 0 0 0 14 5l1-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'}</button>
+        <div class="player-tools"><button data-p="mu" aria-label="Звук" title="Звук">${AU.muted||AU.volume===0?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4m12-1 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4m12-1a4 4 0 0 1 0 6m0-10a8 8 0 0 1 0 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'}</button><button data-p="ls" aria-label="Очередь" title="Очередь"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="18" cy="18" r="2" fill="currentColor"/></svg></button><button data-p="add" aria-label="Добавить" title="Добавить"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
       </div>
     </div>
     <input type="file" id="pfi" accept="audio/*" multiple hidden>
