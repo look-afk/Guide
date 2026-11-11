@@ -225,10 +225,29 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:8px 0}
 .player-empty{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .player-empty .pbb{height:42px;padding:0 18px;border:0;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:600}
 .player-empty .ph{font-size:13px;color:var(--mute)}
-.pq{grid-column:1/-1;max-height:280px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:6px;margin-top:14px}
-.pi{display:flex;align-items:center;border-radius:12px;padding:3px}.pi.on{background:var(--surf)}
-.pb2 .pit{flex:1;display:flex;align-items:center;gap:11px;width:auto;height:auto;border-radius:12px;padding:7px 9px;text-align:left;min-width:0;font-size:14px}
-.pit span:not(.pcov){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pit small{color:var(--mute);font-size:11px}
+.queue-list{max-height:260px;overflow-y:auto;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:6px;margin-top:14px}
+.queue-row{display:flex;align-items:center;gap:8px;min-height:58px;padding:4px 6px;border-radius:12px}
+.queue-row.active{background:var(--surf)}
+.queue-track{flex:1;display:flex;align-items:center;gap:11px;min-width:0;min-height:48px;height:auto!important;padding:5px 8px!important;border:0!important;border-radius:10px!important;background:transparent!important;text-align:left;font-size:13px}
+.queue-track .queue-meta{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0;white-space:normal!important}
+.queue-track strong,.queue-track small{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-track strong{font-size:13px;font-weight:650}
+.queue-track small,.queue-size{font-size:11px;color:var(--mute)}
+.queue-track .pcov{width:42px;height:42px;border-radius:10px}
+.queue-remove{width:34px!important;height:34px!important;flex:none;color:var(--mute)}
+@media(max-width:520px){
+ #pl{padding:8px 10px;margin:0 -10px 18px}
+ .player-shell{padding:12px;border-radius:18px}
+ .player-main{grid-template-columns:54px minmax(0,1fr);gap:10px}
+ .player-art .pcov{width:54px;height:54px;border-radius:12px}
+ .player-kicker{font-size:9px}.ptt{font-size:14px}.pst{font-size:11px}
+ .player-progress{gap:6px;margin-top:7px;font-size:10px}
+ .player-actions{gap:2px;padding-top:2px}
+ .player-actions button{width:32px;height:34px;font-size:15px}
+ .player-actions .pp{width:42px;height:42px;font-size:17px}
+ .player-tools{margin-left:4px;padding-left:5px}.player-tools button{width:31px}
+ .queue-list{max-height:210px;margin-top:10px}.queue-row{min-height:54px}
+}
 @media(max-width:900px){.player-main{grid-template-columns:64px minmax(0,1fr);gap:12px}.player-art .pcov{width:64px;height:64px}.player-actions{grid-column:1/-1;justify-content:center;padding-top:4px}.player-tools{margin-left:8px}}
 @media(max-width:520px){#pl{padding:8px 12px;margin-left:-12px;margin-right:-12px}.player-shell{padding:13px;border-radius:20px}.player-main{grid-template-columns:58px minmax(0,1fr)}.player-art .pcov{width:58px;height:58px;border-radius:13px}.ptt{font-size:14px}.player-actions{gap:3px}.player-actions button{width:34px;height:34px}.player-actions .pp{width:44px;height:44px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -651,7 +670,7 @@ function renderPlayer(){
       </div>
     </div>
     <input type="file" id="pfi" accept="audio/*" multiple hidden>
-    ${plOpen?`<div class="pq">${M.list.map((m,i)=>`<div class="pi${i===M.i?' on':''}"><button class="pit nt" data-p="t${i}">${cover(m.n,m.art,true)}<span><strong>${esc(m.n)}</strong><small style="display:block">${esc(m.artist||'Неизвестный исполнитель')}</small></span><small>${m.cloud?'☁ ':''}${(m.size/1048576).toFixed(1)} МБ</small></button><button class="pix" data-p="x${i}" aria-label="Удалить">×</button></div>`).join('')}</div>`:''}
+    ${plOpen?`<div class="queue-list">${M.list.map((m,i)=>`<div class="queue-row${i===M.i?' active':''}"><button class="queue-track" data-p="t${i}">${cover(m.n,m.art,true)}<span class="queue-meta"><strong>${esc(m.n)}</strong><small>${esc(m.artist||'Неизвестный исполнитель')}</small></span><span class="queue-size">${m.cloud?'☁ ':''}${(m.size/1048576).toFixed(1)} МБ</span></button><button class="queue-remove" data-p="x${i}" aria-label="Удалить">×</button></div>`).join('')}</div>`:''}
   </div>`;
   i18n(h);
 }
